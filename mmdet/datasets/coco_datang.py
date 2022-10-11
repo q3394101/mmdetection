@@ -167,6 +167,7 @@ class CocoDataset_datang(CustomDataset):
             if ann['category_id'] not in self.cat_ids:
                 continue
             bbox = [x1, y1, x1 + w, y1 + h]
+
             if ann.get('iscrowd', False):
                 gt_bboxes_ignore.append(bbox)
             elif ann.get('occ', 0) > occ_ignore_thre[int(
@@ -175,11 +176,13 @@ class CocoDataset_datang(CustomDataset):
             elif ann.get('direct', 0) > direct_ignore_thre[int(
                     ann['category_id'])]:
                 gt_bboxes_ignore.append(bbox)
+                
             else:
                 gt_bboxes.append(bbox)
                 gt_labels.append(self.cat2label[ann['category_id']])
                 gt_masks_ann.append(ann.get('segmentation', None))
                 # gt_occs.append(ann.get('occ', 10))  # debug v1.1-1
+                gt_occs.append(ann.get('occlude', 0))  # use v1.1-1, default:0
                 gt_occs.append(ann.get('occ', 0))  # use v1.1-1, default:0
                 gt_direct.append(ann.get('direct', 0))  # use v1.1-1, default:0
 

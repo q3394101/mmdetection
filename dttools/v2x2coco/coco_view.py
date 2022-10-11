@@ -53,8 +53,7 @@ def showBBox(coco, anns, label_box=True, is_filling=True):
             ax.text(
                 bbox_x,
                 bbox_y,
-                str(occ) if SHOW_OCC else '%s' %
-                (coco.loadCats(ann['category_id'])[0]['name']),
+                '%s' % (coco.loadCats(ann['category_id'])[0]['name']),
                 color='white',
                 bbox=label_bbox)
     if is_filling:
@@ -90,7 +89,7 @@ def show_coco(data_root,
     for i in range(len(image_ids)):
         if DEBUG and random.random() < 0.9:
             continue
-        fig = plt.figure(figsize=(25, 25))
+        fig = plt.figure(figsize=(20, 20))
         if backend == 'TkAgg':
             fig.canvas.manager.window.wm_geometry('+300+300')
         elif backend == 'WXAgg':
@@ -111,7 +110,6 @@ def show_coco(data_root,
             showBBox(example_coco, annotations)
         else:
             example_coco.showAnns(annotations)
-        print(path)
         plt.show()
 
 

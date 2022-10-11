@@ -575,12 +575,12 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
             else:
                 gt_bboxes_direct = decoded_bboxes.new_empty(0, )
 
-           
-           
-           
-           
-           
-           
+
+
+
+
+
+
             # normalize
             gt_bboxes_occs /= 100  # v1.1-6
             # gt_bboxes_direct /= 100
