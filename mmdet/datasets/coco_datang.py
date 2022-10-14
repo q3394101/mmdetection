@@ -159,7 +159,7 @@ class CocoDataset_datang(CustomDataset):
             elif ann.get('truncate', 0) > truncate_ignore_thre[int(
                     ann['category_id'])]:
                 gt_bboxes_ignore.append(bbox)
-                
+
             else:
                 gt_bboxes.append(bbox)
                 gt_labels.append(self.cat2label[ann['category_id']])

@@ -240,15 +240,74 @@ def main():
             CLASSES=datasets[0].CLASSES)
     # add an attribute for visualization convenience
     model.CLASSES = datasets[0].CLASSES
-    train_detector(
-        model,
-        datasets,
-        cfg,
-        distributed=distributed,
-        validate=(not args.no_validate),
-        timestamp=timestamp,
-        meta=meta)
+    if not save_moscia:
+        train_detector(
+            model,
+            datasets,
+            cfg,
+            distributed=distributed,
+            validate=(not args.no_validate),
+            timestamp=timestamp,
+            meta=meta)
+    else:
+        mydata(datasets, cfg)
+
+
+def mydata(datasets, cfg):
+    dataset = datasets if isinstance(datasets, (list, tuple)) else [datasets]
+    distributed = False
+    cfg = compat_cfg(cfg)
+    runner_type = 'EpochBasedRunner' if 'runner' not in cfg else cfg.runner[
+        'type']
+    train_dataloader_default_args = dict(
+        samples_per_gpu=2,
+        workers_per_gpu=2,
+        # `num_gpus` will be ignored if distributed
+        num_gpus=len(cfg.gpu_ids),
+        dist=distributed,
+        seed=cfg.seed,
+        runner_type=runner_type,
+        persistent_workers=False)
+
+    train_loader_cfg = {
+        **train_dataloader_default_args,
+        **cfg.data.get('train_dataloader', {})
+    }
+    data_loaders = [build_dataloader(ds, **train_loader_cfg) for ds in dataset]
+    path = Path(
+        '/home/ubuntu/workspace/xianjd/mmdetection/dttools/save_moscia_images_board0.5-1.0'  # noqa 501
+    )
+    path.mkdir(parents=True, exist_ok=True)
+    for loader in data_loaders:
+        for i, data in enumerate(loader):
+            if i == 100:
+                break
+            images = data['img'].data[0].permute(0, 2, 3,
+                                                 1).contiguous().unbind(0)
+            cates = data['gt_labels'].data[0]
+            bboxes = data['gt_bboxes'].data[0]
+            for (img, cat, bbox) in zip(images, cates, bboxes):
+                np_img = img.cpu().numpy().astype(np.uint8)
+                for cate, box in zip(cat, bbox):
+                    cate = int(cate)
+                    box = box.round().int().tolist()
+                    cv2.rectangle(np_img, box[:2], box[2:], [0, 255, 0], 2)
+                    cv2.putText(
+                        np_img,
+                        str(cate), (box[0], box[1] - 2),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.25, [225, 255, 255],
+                        thickness=1)
+                cv2.imwrite(f'{str(path / str(i))}.jpg', np_img[:, :, ::-1])
 
 
 if __name__ == '__main__':
+    save_moscia = True
+    from pathlib import Path
+
+    import cv2
+    import numpy as np
+
+    from mmdet.datasets import build_dataloader
+    from mmdet.utils import compat_cfg
     main()
