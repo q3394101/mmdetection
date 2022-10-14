@@ -234,7 +234,7 @@ class LoadAnnotations:
         poly2mask=True,
         denorm_bbox=False,
         with_occ=False,  # v1.1-1
-        file_client_args=dict(backend='disk')):  # noqa: E125
+        file_client_args=dict(backend='disk')):  # noqa E125
         self.with_bbox = with_bbox
         self.with_label = with_label
         self.with_mask = with_mask
@@ -254,7 +254,7 @@ class LoadAnnotations:
             dict: The dict contains loaded occlusion annotations.
         """
         ann_info = results['ann_info']
-        results['gt_occs'] = ann_info['occlude'].copy()
+        results['gt_occs'] = ann_info['occ'].copy()
         return results
 
     def _load_bboxes(self, results):

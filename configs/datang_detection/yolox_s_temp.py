@@ -16,8 +16,8 @@ if os.environ.get('DEBUG', False):
     DEBUG = True
 batch_size = 2
 img_scale = (640, 640)  # height, width
-CLASSES = ('Car', 'Truck', 'Van', 'Bus', 'Pedestrian', 'Cyclist', 'Tricyclist',
-           'Motorcyclist', 'Barrowlist', 'Trafficcone')
+CLASSES = ('Car', 'Bus', 'Cyclist', 'Pedestrian', 'driverless_car', 'Truck',
+           'Tricyclist', 'Trafficcone')
 
 # model settings
 model = dict(
@@ -62,13 +62,17 @@ data_root = 'data/coco/'
 dataset_type = 'CocoDataset_datang'
 
 train_pipeline = [
-    ##################### TODO:ratio  v1.1-3 # noqa E266
-    # dict(type='Mosaic', img_scale=img_scale, pad_val=114.0),
-    ###############
+    #################### TODO:ratio  v1.1-3 # noqa E266
     dict(
-        type='RandomAffine',
-        scaling_ratio_range=(0.1, 2),
-        border=(-img_scale[0] // 2, -img_scale[1] // 2)),
+        type='Mosaic',
+        img_scale=img_scale,
+        pad_val=114.0,
+        center_ratio_range=(0.5, 1.5)),
+    ##############
+    # dict(
+    #     type='RandomAffine',
+    #     scaling_ratio_range=(0.1, 2),
+    #     border=(-img_scale[0] // 2, -img_scale[1] // 2)),
     dict(type='YOLOXHSVRandomAug'),
     dict(type='RandomFlip', flip_ratio=0.5),
     dict(type='Resize', img_scale=img_scale, keep_ratio=True),
@@ -83,10 +87,10 @@ train_pipeline = [
     dict(type='DefaultFormatBundle'),
     dict(
         type='Collect',
-        keys=['img', 'gt_bboxes', 'gt_labels', 'gt_bboxes_ignore'],
+        keys=['img', 'gt_bboxes', 'gt_labels', 'gt_bboxes_ignore', 'gt_occs'],
         meta_keys=('filename', 'ori_filename', 'ori_shape', 'img_shape',
                    'pad_shape', 'scale_factor', 'flip', 'flip_direction',
-                   'img_norm_cfg', 'gt_occs'))  # v1.1-1  v1.1-2
+                   'img_norm_cfg'))  # v1.1-1  v1.1-2
 ]
 
 train_dataset = dict(
@@ -94,8 +98,8 @@ train_dataset = dict(
     dataset=dict(
         type=dataset_type,
         classes=CLASSES,
-        ann_file=data_root + 'annotations/instances_train2017.json',
-        img_prefix=data_root + 'train2017/',
+        ann_file=data_root + 'annotations/train.json',
+        img_prefix=data_root + 'train/',
         pipeline=[
             dict(type='LoadImageFromFile'),
             dict(type='LoadAnnotations', with_bbox=True, with_occ=True),
@@ -130,14 +134,14 @@ data = dict(
     val=dict(
         type=dataset_type,
         classes=CLASSES,
-        ann_file=data_root + 'annotations/instances_val2017.json',
-        img_prefix=data_root + 'val2017/',
+        ann_file=data_root + 'annotations/val.json',
+        img_prefix=data_root + 'val/',
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
         classes=CLASSES,
-        ann_file=data_root + 'annotations/instances_val2017.json',
-        img_prefix=data_root + 'val2017/',
+        ann_file=data_root + 'annotations/val.json',
+        img_prefix=data_root + 'val/',
         pipeline=test_pipeline))
 
 ######################################################################################################  # noqa E501,266

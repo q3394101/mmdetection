@@ -27,6 +27,7 @@ def showBBox(coco, anns, label_box=True, is_filling=True):
         image2color[cat] = (np.random.random((1, 3)) * 0.7 + 0.3).tolist()[0]
     for ann in anns:
         c = image2color[ann['category_id']]
+
         [bbox_x, bbox_y, bbox_w, bbox_h] = ann['bbox']
         poly = [[bbox_x, bbox_y], [bbox_x, bbox_y + bbox_h],
                 [bbox_x + bbox_w, bbox_y + bbox_h], [bbox_x + bbox_w, bbox_y]]
@@ -85,7 +86,7 @@ def show_coco(data_root,
     for i in range(len(image_ids)):
         if DEBUG and random.random() < 0.9:
             continue
-        fig = plt.figure(figsize=(20, 20))
+        fig = plt.figure(figsize=(25, 25))
         if backend == 'TkAgg':
             fig.canvas.manager.window.wm_geometry('+300+300')
         elif backend == 'WXAgg':
@@ -106,6 +107,7 @@ def show_coco(data_root,
             showBBox(example_coco, annotations)
         else:
             example_coco.showAnns(annotations)
+        print(path)
         plt.show()
 
 
@@ -113,9 +115,9 @@ if __name__ == '__main__':
     # 和cfg里面设置一样 coco
     DEBUG = True
     random.seed(0)
-    data_root = '/media/ubuntu/Others/datasets/baidu_2d_3d/COCO/'
-    ann_file = data_root + 'annotations/instances_train2017.json'
-    img_prefix = data_root + 'train2017'
+    data_root = '/home/ubuntu/workspace/xianjd/mmdetection/data/coco/'
+    ann_file = data_root + 'annotations/train.json'
+    img_prefix = data_root + 'train'
     show_coco(data_root, ann_file, img_prefix)
 
     # # voc转化为coco后显示

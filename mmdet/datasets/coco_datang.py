@@ -22,12 +22,30 @@ from .custom import CustomDataset
 @DATASETS.register_module()
 class CocoDataset_datang(CustomDataset):
 
-    CLASSES = ('Car', 'Truck', 'Van', 'Bus', 'Pedestrian', 'Cyclist',
-               'Tricyclist', 'Motorcyclist', 'Barrowlist', 'Trafficcone')
+    CLASSES = ('Car', 'Bus', 'Cyclist', 'Pedestrian', 'driverless_car',
+               'Truck', 'Tricyclist', 'Trafficcone')
 
     PALETTE = [(220, 20, 60), (119, 11, 32), (0, 0, 142), (0, 0, 230),
                (106, 0, 228), (0, 60, 100), (0, 80, 100), (0, 0, 70),
-               (0, 0, 192), (250, 170, 30)]
+               (0, 0, 192), (250, 170, 30), (100, 170, 30), (220, 220, 0),
+               (175, 116, 175), (250, 0, 30), (165, 42, 42), (255, 77, 255),
+               (0, 226, 252), (182, 182, 255), (0, 82, 0), (120, 166, 157),
+               (110, 76, 0), (174, 57, 255), (199, 100, 0), (72, 0, 118),
+               (255, 179, 240), (0, 125, 92), (209, 0, 151), (188, 208, 182),
+               (0, 220, 176), (255, 99, 164), (92, 0, 73), (133, 129, 255),
+               (78, 180, 255), (0, 228, 0), (174, 255, 243), (45, 89, 255),
+               (134, 134, 103), (145, 148, 174), (255, 208, 186),
+               (197, 226, 255), (171, 134, 1), (109, 63, 54), (207, 138, 255),
+               (151, 0, 95), (9, 80, 61), (84, 105, 51), (74, 65, 105),
+               (166, 196, 102), (208, 195, 210), (255, 109, 65), (0, 143, 149),
+               (179, 0, 194), (209, 99, 106), (5, 121, 0), (227, 255, 205),
+               (147, 186, 208), (153, 69, 1), (3, 95, 161), (163, 255, 0),
+               (119, 0, 170), (0, 182, 199), (0, 165, 120), (183, 130, 88),
+               (95, 32, 0), (130, 114, 135), (110, 129, 133), (166, 74, 118),
+               (219, 142, 185), (79, 210, 114), (178, 90, 62), (65, 70, 15),
+               (127, 167, 115), (59, 105, 106), (142, 108, 45), (196, 172, 0),
+               (95, 54, 80), (128, 76, 255), (201, 57, 1), (246, 0, 122),
+               (191, 162, 208)]
 
     def load_annotations(self, ann_file):
         """Load annotation from COCO style annotation file.
@@ -129,8 +147,8 @@ class CocoDataset_datang(CustomDataset):
         gt_bboxes_ignore = []
         gt_masks_ann = []
         gt_occs = []  # v1.1-1
-        occ_ignore_thre = [1, 1, 1, 1, 1, 1, 1, 1, 1,
-                           1]  # v1.1-1 and v1.1-2 set occ ignore threshold
+        occ_ignore_thre = [80, 80, 80, 80, 80, 80, 80,
+                           80]  # v1.1-1 and v1.1-2 set occ ignore threshold
 
         for i, ann in enumerate(ann_info):
             if ann.get('ignore', False):
@@ -148,7 +166,7 @@ class CocoDataset_datang(CustomDataset):
 
             if ann.get('iscrowd', False):
                 gt_bboxes_ignore.append(bbox)
-            elif ann.get('occlude', 0) > occ_ignore_thre[int(
+            elif ann.get('occ', 0) > occ_ignore_thre[int(
                     ann['category_id'])]:  # v1.1-2
                 gt_bboxes_ignore.append(bbox)
             else:
@@ -156,7 +174,7 @@ class CocoDataset_datang(CustomDataset):
                 gt_labels.append(self.cat2label[ann['category_id']])
                 gt_masks_ann.append(ann.get('segmentation', None))
                 # gt_occs.append(ann.get('occ', 10))  # debug v1.1-1
-                gt_occs.append(ann.get('occlude', 0))  # use v1.1-1, default:0
+                gt_occs.append(ann.get('occ', 0))  # use v1.1-1, default:0
 
         if gt_bboxes:
             gt_bboxes = np.array(gt_bboxes, dtype=np.float32)
@@ -180,7 +198,7 @@ class CocoDataset_datang(CustomDataset):
             bboxes_ignore=gt_bboxes_ignore,
             masks=gt_masks_ann,
             seg_map=seg_map,
-            occlude=gt_occs  # v1.1-1
+            occ=gt_occs  # v1.1-1
         )
 
         return ann
