@@ -123,7 +123,7 @@ train_pipeline = [
         ],
         meta_keys=('filename', 'ori_filename', 'ori_shape', 'img_shape',
                    'pad_shape', 'scale_factor', 'flip', 'flip_direction',
-                   'img_norm_cfg'))  # v1.1-1  v1.1-2
+                   'img_norm_cfg', 'gt_occs'))  # v1.1-1  v1.1-2
 ]
 
 train_dataset = dict(
