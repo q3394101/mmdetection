@@ -71,7 +71,8 @@ class YOLOX(SingleStageDetector):
                       img_metas,
                       gt_bboxes,
                       gt_labels,
-                      gt_bboxes_ignore=None):
+                      gt_bboxes_ignore=None,
+                      gt_occs=None):
         """
         Args:
             img (Tensor): Input images of shape (N, C, H, W).
@@ -91,9 +92,18 @@ class YOLOX(SingleStageDetector):
         """
         # Multi-scale training
         img, gt_bboxes = self._preprocess(img, gt_bboxes)
+        x = self.extract_feat(img)
 
-        losses = super(YOLOX, self).forward_train(img, img_metas, gt_bboxes,
-                                                  gt_labels, gt_bboxes_ignore)
+        losses = self.bbox_head.forward_train(x, img_metas, gt_bboxes,
+                                              gt_labels, gt_bboxes_ignore,
+                                              gt_occs)
+
+        # losses = super(YOLOX, self).\
+        #     forward_train(img, img_metas,
+        #                   gt_bboxes,
+        #                   gt_labels,
+        #                   gt_bboxes_ignore,
+        #                   gt_occs)
 
         # random resizing
         if (self._progress_in_iter + 1) % self._random_size_interval == 0:

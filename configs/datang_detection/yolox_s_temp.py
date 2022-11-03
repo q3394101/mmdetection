@@ -45,7 +45,8 @@ model = dict(
         occ_reg_weight_type=  # noqa E251
         'Linear',  # v1.1-1  current types: 'None','Linear',etc.
         with_ignore=True,  # v1.1-2
-        bound_weight=[1.0, 2.0, 1.0, 1.0]  # up low left right v1.1-5
+        bound_weight=[1.0, 2.0, 1.0, 1.0],  # up low left right v1.1-5
+        with_occ=True,  # v1.1-6 linsong
     ),
     # In order to align the source code, the threshold of the val phase is
     # 0.01, and the threshold of the test phase is 0.001.
@@ -58,7 +59,7 @@ model = dict(
 ########################### data loading pipeline 2022-10-08 ######################################### noqa E501,E266
 
 # dataset settings
-data_root = 'data/coco/'
+data_root = '/home/ubuntu/workspace/xianjd/mmdetection/data/coco/'  # noqa E501
 dataset_type = 'CocoDataset_datang'
 
 train_pipeline = [
@@ -67,7 +68,7 @@ train_pipeline = [
         type='Mosaic',
         img_scale=img_scale,
         pad_val=114.0,
-        center_ratio_range=(0.5, 1.5)),
+        center_ratio_range=(1.0, 1.0)),
     ##############
     # dict(
     #     type='RandomAffine',
@@ -98,7 +99,7 @@ train_dataset = dict(
     dataset=dict(
         type=dataset_type,
         classes=CLASSES,
-        ann_file=data_root + 'annotations/train.json',
+        ann_file=data_root + 'annotations/train_with_occ_direct.json',
         img_prefix=data_root + 'train/',
         pipeline=[
             dict(type='LoadImageFromFile'),
@@ -159,7 +160,6 @@ optimizer = dict(
     nesterov=True,
     paramwise_cfg=dict(norm_decay_mult=0., bias_decay_mult=0.))
 optimizer_config = dict(grad_clip=None)
-# optimizer_config = dict(grad_clip=None)
 
 max_epochs = 300
 num_last_epochs = 15

@@ -9,6 +9,8 @@ from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 from pycocotools.coco import COCO
 
+# plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
+
 
 def showBBox(coco, anns, label_box=True, is_filling=True):
     """
@@ -34,6 +36,7 @@ def showBBox(coco, anns, label_box=True, is_filling=True):
         np_poly = np.array(poly).reshape((4, 2))
         polygons.append(Polygon(np_poly))
         color.append(c)
+        occ = ann.get('occ', 0)
         if label_box:
             label_bbox = dict(facecolor=c)
         else:
@@ -50,7 +53,8 @@ def showBBox(coco, anns, label_box=True, is_filling=True):
             ax.text(
                 bbox_x,
                 bbox_y,
-                '%s' % (coco.loadCats(ann['category_id'])[0]['name']),
+                str(occ) if SHOW_OCC else '%s' %
+                (coco.loadCats(ann['category_id'])[0]['name']),
                 color='white',
                 bbox=label_bbox)
     if is_filling:
@@ -113,10 +117,11 @@ def show_coco(data_root,
 
 if __name__ == '__main__':
     # 和cfg里面设置一样 coco
-    DEBUG = True
+    DEBUG = False
+    SHOW_OCC = False
     random.seed(0)
-    data_root = '/home/ubuntu/workspace/xianjd/mmdetection/data/coco/'
-    ann_file = data_root + 'annotations/train.json'
+    data_root = '/home/ubuntu/workspace/xianjd/mmdetection/dttools/dt_data/orin_data/'  # noqa E501
+    ann_file = data_root + 'dtcoco.json'
     img_prefix = data_root + 'train'
     show_coco(data_root, ann_file, img_prefix)
 

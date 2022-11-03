@@ -147,9 +147,10 @@ class CocoDataset_datang(CustomDataset):
         gt_bboxes_ignore = []
         gt_masks_ann = []
         gt_occs = []  # v1.1-1
-        occ_ignore_thre = [80, 80, 80, 80, 80, 80, 80,
-                           80]  # v1.1-1 and v1.1-2 set occ ignore threshold
-
+        occ_ignore_thre = [
+            80, 80, 80, 80, 80, 80, 80, 80
+        ]  # v1.1-1 and v1.1-2 set occ ignore threshold # noqa E501
+        # occ_ignore_thre = [10, 10, 10, 10, 10, 10, 10, 10]
         for i, ann in enumerate(ann_info):
             if ann.get('ignore', False):
                 continue
@@ -163,11 +164,10 @@ class CocoDataset_datang(CustomDataset):
             if ann['category_id'] not in self.cat_ids:
                 continue
             bbox = [x1, y1, x1 + w, y1 + h]
-
             if ann.get('iscrowd', False):
                 gt_bboxes_ignore.append(bbox)
             elif ann.get('occ', 0) > occ_ignore_thre[int(
-                    ann['category_id'])]:  # v1.1-2
+                    ann['category_id'])]:  # v1.1-2 # noqa E501
                 gt_bboxes_ignore.append(bbox)
             else:
                 gt_bboxes.append(bbox)
@@ -190,7 +190,7 @@ class CocoDataset_datang(CustomDataset):
         else:
             gt_bboxes_ignore = np.zeros((0, 4), dtype=np.float32)
 
-        seg_map = img_info['filename'].replace('jpg', 'png')
+        seg_map = img_info['filename'].rsplit('.', 1)[0] + self.seg_suffix
 
         ann = dict(
             bboxes=gt_bboxes,
