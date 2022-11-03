@@ -331,7 +331,8 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
              gt_bboxes,
              gt_labels,
              img_metas,
-             gt_bboxes_ignore=None):
+             gt_bboxes_ignore=None,
+             gt_occs=None):
         """Compute loss of the head.
         Args:
             cls_scores (list[Tensor]): Box scores for each scale level,
@@ -350,6 +351,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
                 image size, scaling factor, etc.
             gt_bboxes_ignore (None | list[Tensor]): specify which bounding
                 boxes can be ignored when computing the loss.
+            gt_occs:
         """
         num_imgs = len(img_metas)
         featmap_sizes = [cls_score.shape[2:] for cls_score in cls_scores]
@@ -379,13 +381,13 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         flatten_priors = torch.cat(mlvl_priors)
         flatten_bboxes = self._bbox_decode(flatten_priors, flatten_bbox_preds)
 
-        (pos_masks, cls_targets, obj_targets, bbox_targets,
-         l1_targets, num_fg_imgs, ignore_weight_map) = multi_apply(
+        (pos_masks, cls_targets, obj_targets, bbox_targets, l1_targets,
+         num_fg_imgs, ignore_weight_map, occs_weight_map) = multi_apply(
              self._get_target_single, flatten_cls_preds.detach(),
              flatten_objectness.detach(),
              flatten_priors.unsqueeze(0).repeat(num_imgs, 1, 1),
-             flatten_bboxes.detach(), gt_bboxes, gt_labels,
-             gt_bboxes_ignore)  # v1.1-2
+             flatten_bboxes.detach(), gt_bboxes, gt_labels, gt_bboxes_ignore,
+             gt_occs)  # v1.1-2
 
         # The experimental results show that ‘reduce_mean’ can improve
         # performance on the COCO dataset.
@@ -400,14 +402,20 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         obj_targets = torch.cat(obj_targets, 0)
         bbox_targets = torch.cat(bbox_targets, 0)
         ignore_weight_map = torch.cat(ignore_weight_map, 0)  # v1.1-2
+        occs_weight_map = torch.cat(occs_weight_map, 0)
 
         ##################### TODO: occlusion weight soft-label for classification / hard minging for regression  v1.1-1  # noqa E501,251
         #         occ_cls_weight_type='Linear',  # v1.1-1  current types: 'None','Linear',etc.  # noqa E501
         #         occ_reg_weight_type='Linear',  # v1.1-1  current types: 'None','Linear',etc.  # noqa E501
         #         extract occ value from img_metas
         #         weight_mask build
-        occ_cls_weight_map = torch.ones_like(ignore_weight_map)
-        occ_reg_weight_map = torch.ones_like(ignore_weight_map)
+
+        # occ_cls_weight_map = torch.ones_like(ignore_weight_map)
+        # occ_reg_weight_map = torch.ones_like(ignore_weight_map)
+
+        occ_cls_weight_map = occs_weight_map.clone()
+        occ_reg_weight_map = occs_weight_map.clone()
+
         ####################################################################################################  # noqa E501,266
 
         if self.use_l1:
@@ -422,6 +430,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         # loss_obj = self.loss_obj(flatten_objectness.view(-1, 1),
         #                          obj_targets)
         # loss_obj = torch.sum(loss_obj * ignore_weight_map) / num_total_samples # v1.1-2  # noqa E501
+
         loss_obj = self.loss_obj(
             flatten_objectness.view(-1, 1),
             obj_targets,
@@ -461,7 +470,8 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
                            decoded_bboxes,
                            gt_bboxes,
                            gt_labels,
-                           gt_bboxes_ignore=None):
+                           gt_bboxes_ignore=None,
+                           gt_bboxes_occs=None):
         # v1.1-2
         """Compute classification, regression, and objectness targets for
         priors in a single image.
@@ -480,8 +490,8 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
             gt_labels (Tensor): Ground truth labels of one image, a Tensor
                 with shape [num_gts].
             gt_bboxes_ignore:
+            gt_bboxes_occs:
         """
-
         num_priors = priors.size(0)
         num_gts = gt_labels.size(0)
         num_igs = gt_bboxes_ignore.size(0)  # v1.1-2
@@ -490,13 +500,14 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         # No target
         if num_gts == 0:
             ignore_weight_map = torch.ones_like(objectness).float()  # v1.1-2
+            occs_weight_map = torch.ones_like(objectness).float()  # v1.1-6
             cls_target = cls_preds.new_zeros((0, self.num_classes))
             bbox_target = cls_preds.new_zeros((0, 4))
             l1_target = cls_preds.new_zeros((0, 4))
             obj_target = cls_preds.new_zeros((num_priors, 1))
             foreground_mask = cls_preds.new_zeros(num_priors).bool()
             return (foreground_mask, cls_target, obj_target, bbox_target,
-                    l1_target, 0, ignore_weight_map)
+                    l1_target, 0, ignore_weight_map, occs_weight_map)
 
         # YOLOX uses center priors with 0.5 offset to assign targets,
         # but use center priors without offset to regress bboxes.
@@ -510,11 +521,27 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
 
         ############# TODO: v1.1-2 ignore bboxes + bboxes assigning and indexing (need to validate) ###############  # noqa E501,266
         ignore_weight_map = torch.ones_like(objectness).float()
-        if num_igs != 0 and self.train_cfg.with_ignore:
-            gt_bboxes_ignore = gt_bboxes_ignore.to(decoded_bboxes.dtype)
+        occs_weight_map = torch.ones_like(objectness).float()
+        if num_igs != 0:
+            with_ignore = self.train_cfg.get('with_ignore', False) # v1.1-6
+            with_occ = self.train_cfg.get('with_occ', False) # v1.1-6
+            if with_ignore:
+                gt_bboxes_ignore = gt_bboxes_ignore.to(decoded_bboxes.dtype) # v1.1-6
+            else:
+                gt_bboxes_ignore = decoded_bboxes.new_empty(0, 4) # v1.1-6
+            if with_occ:
+                gt_bboxes_occs = gt_bboxes_occs.to(decoded_bboxes.dtype) # v1.1-6
+            else:
+                gt_bboxes_occs = decoded_bboxes.new_empty(0, ) # v1.1-6
+            # normalize
+            gt_bboxes_occs /= 100 # v1.1-6
+
             gt_bboxes_all = torch.cat((gt_bboxes, gt_bboxes_ignore))
             gt_labels_all = torch.cat(
                 (gt_labels, gt_labels.new_zeros(num_igs)))
+
+            gt_bboxes_occs_all = torch.cat(
+                (gt_bboxes_occs, gt_bboxes_occs.new_zeros(num_igs))) # v1.1-6
             assign_result = self.assigner.assign(
                 cls_preds.sigmoid() * objectness.unsqueeze(1).sigmoid(),
                 offset_priors, decoded_bboxes, gt_bboxes_all, gt_labels_all
@@ -524,6 +551,9 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
             for ig_indx in range(num_gts, num_gts + num_igs):
                 ignore_weight_map[sampling_result.pos_inds[torch.nonzero(
                     sampling_result.pos_assigned_gt_inds == ig_indx)]] = 0.0
+            occs_weight_map[sampling_result.pos_inds] += torch.exp(
+                -gt_bboxes_occs_all[sampling_result.pos_assigned_gt_inds]
+            )  # v1.1-6
         else:
             assign_result = self.assigner.assign(
                 cls_preds.sigmoid() * objectness.unsqueeze(1).sigmoid(),
@@ -550,7 +580,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         foreground_mask[pos_inds] = 1
 
         return (foreground_mask, cls_target, obj_target, bbox_target,
-                l1_target, num_pos_per_img, ignore_weight_map)
+                l1_target, num_pos_per_img, ignore_weight_map, occs_weight_map) # v1.1-6
 
     def _get_l1_target(self, l1_target, gt_bboxes, priors, eps=1e-8):
         """Convert gt bboxes to center offset and log width height."""
@@ -558,3 +588,45 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         l1_target[:, :2] = (gt_cxcywh[:, :2] - priors[:, :2]) / priors[:, 2:]
         l1_target[:, 2:] = torch.log(gt_cxcywh[:, 2:] / priors[:, 2:] + eps)
         return l1_target
+
+    def forward_train(self,
+                      x,
+                      img_metas,
+                      gt_bboxes,
+                      gt_labels=None,
+                      gt_bboxes_ignore=None,
+                      gt_occs=None,
+                      proposal_cfg=None,
+                      **kwargs):
+        """
+        Args:
+            x (list[Tensor]): Features from FPN.
+            img_metas (list[dict]): Meta information of each image, e.g.,
+                image size, scaling factor, etc.
+            gt_bboxes (Tensor): Ground truth bboxes of the image,
+                shape (num_gts, 4).
+            gt_labels (Tensor): Ground truth labels of each box,
+                shape (num_gts,).
+            gt_bboxes_ignore (Tensor): Ground truth bboxes to be
+                ignored, shape (num_ignored_gts, 4).
+            proposal_cfg (mmcv.Config): Test / postprocessing configuration,
+                if None, test_cfg would be used
+
+        Returns:
+            tuple:
+                losses: (dict[str, Tensor]): A dictionary of loss components.
+                proposal_list (list[Tensor]): Proposals of each image.
+        """
+        outs = self(x)
+        if gt_labels is None:
+            loss_inputs = outs + (gt_bboxes, img_metas)
+        else:
+            loss_inputs = outs + (gt_bboxes, gt_labels, img_metas)
+        losses = self.loss(
+            *loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore, gt_occs=gt_occs)
+        if proposal_cfg is None:
+            return losses
+        else:
+            proposal_list = self.get_bboxes(
+                *outs, img_metas=img_metas, cfg=proposal_cfg)
+            return losses, proposal_list
