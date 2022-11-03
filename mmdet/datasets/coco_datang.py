@@ -167,7 +167,6 @@ class CocoDataset_datang(CustomDataset):
             if ann['category_id'] not in self.cat_ids:
                 continue
             bbox = [x1, y1, x1 + w, y1 + h]
-
             if ann.get('iscrowd', False):
                 gt_bboxes_ignore.append(bbox)
             elif ann.get('occ', 0) > occ_ignore_thre[int(

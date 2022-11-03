@@ -520,7 +520,6 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
             gt_bboxes_ignore:
             gt_bboxes_occs:
         """
-
         num_priors = priors.size(0)
         num_gts = gt_labels.size(0)
         num_igs = gt_bboxes_ignore.size(0)  # v1.1-2
@@ -574,12 +573,6 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
                 gt_bboxes_direct = gt_bboxes_direct.to(decoded_bboxes.dtype)
             else:
                 gt_bboxes_direct = decoded_bboxes.new_empty(0, )
-
-
-
-
-
-
 
             # normalize
             gt_bboxes_occs /= 100  # v1.1-6
