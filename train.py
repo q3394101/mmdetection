@@ -29,7 +29,7 @@ def parse_args():
     parser.add_argument(
         '--config',
         help='train config file path',
-        default='configs/datang_detection/yolox_s_temp.py')
+        default=config)
     parser.add_argument('--work-dir', help='the dir to save logs and models')
     parser.add_argument(
         '--resume-from', help='the checkpoint file to resume from')
