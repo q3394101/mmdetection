@@ -59,7 +59,7 @@ model = dict(
 ########################### data loading pipeline 2022-10-08 ######################################### noqa E501,E266
 
 # dataset settings
-data_root = '/home/ubuntu/workspace/xianjd/mmdetection/data/coco/'  # noqa E501
+data_root = '/home/chenzhen/code/detection/datasets/coco100/'  # noqa E501
 dataset_type = 'CocoDataset_datang'
 
 train_pipeline = [
@@ -99,7 +99,7 @@ train_dataset = dict(
     dataset=dict(
         type=dataset_type,
         classes=CLASSES,
-        ann_file=data_root + 'annotations/train_with_occ_direct.json',
+        ann_file=data_root + 'annotations/train.json',
         img_prefix=data_root + 'train/',
         pipeline=[
             dict(type='LoadImageFromFile'),
@@ -136,13 +136,13 @@ data = dict(
         type=dataset_type,
         classes=CLASSES,
         ann_file=data_root + 'annotations/val.json',
-        img_prefix=data_root + 'val/',
+        img_prefix=data_root + 'train/',
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
         classes=CLASSES,
         ann_file=data_root + 'annotations/val.json',
-        img_prefix=data_root + 'val/',
+        img_prefix=data_root + 'train/',
         pipeline=test_pipeline))
 
 ######################################################################################################  # noqa E501,266

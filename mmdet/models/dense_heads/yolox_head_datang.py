@@ -62,6 +62,12 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
                  conv_cfg=None,
                  norm_cfg=dict(type='BN', momentum=0.03, eps=0.001),
                  act_cfg=dict(type='Swish'),
+                 bound_loss=dict(  # bound_loss v1.1-6
+                     type='BoundLoss',
+                     mode='linear',
+                     eps=1e-16,
+                     reduction='none',
+                     loss_weight=1.0),
                  loss_cls=dict(
                      type='CrossEntropyLoss',
                      use_sigmoid=True,
@@ -113,6 +119,9 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
 
         self.use_l1 = False  # This flag will be modified by hooks.
         self.loss_l1 = build_loss(loss_l1)
+
+        self.ues_bound_loss = False  # This flag will be modified by hooks v1.1-6
+        self.bound_loss = build_loss(bound_loss)
 
         self.prior_generator = MlvlPointGenerator(strides, offset=0)
 
@@ -461,6 +470,11 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
                 torch.sum(loss_l1 * torch.tensor(bound_weight), 1) *
                 ignore_weight_map[pos_masks]) / num_total_samples  # v1.1-2
             loss_dict.update(loss_l1=loss_l1)
+
+        if self.ues_bound_loss:  #v1.1-6
+            bound_loss = self.bound_loss( flatten_bboxes.view(-1, 4)[pos_masks],bbox_targets)
+            bound_loss = torch.sum(bound_loss * ignore_weight_map[pos_masks]*occ_reg_weight_map[pos_masks]) / num_total_samples
+            loss_dict.update(bound_loss=bound_loss)
 
         return loss_dict
 
