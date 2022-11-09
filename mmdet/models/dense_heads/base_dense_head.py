@@ -307,6 +307,7 @@ class BaseDenseHead(BaseModule, metaclass=ABCMeta):
                       gt_labels=None,
                       gt_bboxes_ignore=None,
                       gt_occs=None,
+                      gt_direct=None,
                       proposal_cfg=None,
                       **kwargs):
         """

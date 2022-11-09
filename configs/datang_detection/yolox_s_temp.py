@@ -47,6 +47,7 @@ model = dict(
         with_ignore=True,  # v1.1-2
         bound_weight=[1.0, 2.0, 1.0, 1.0],  # up low left right v1.1-5
         with_occ=True,  # v1.1-6 linsong
+        with_direct=True,
     ),
     # In order to align the source code, the threshold of the val phase is
     # 0.01, and the threshold of the test phase is 0.001.
@@ -59,8 +60,9 @@ model = dict(
 ########################### data loading pipeline 2022-10-08 ######################################### noqa E501,E266
 
 # dataset settings
-data_root = '/home/chenzhen/code/detection/datasets/coco100/'  # noqa E501
-dataset_type = 'CocoDataset_datang'
+# data_root = '/home/chenzhen/code/detection/datasets/coco100/'  # noqa E501
+data_root = '/home/chenzhen/code/detection/datasets/dt_imgdata/coco_val'
+dataset_type = 'CocoDataset'
 
 train_pipeline = [
     #################### TODO:ratio  v1.1-3 # noqa E266
@@ -88,7 +90,7 @@ train_pipeline = [
     dict(type='DefaultFormatBundle'),
     dict(
         type='Collect',
-        keys=['img', 'gt_bboxes', 'gt_labels', 'gt_bboxes_ignore', 'gt_occs'],
+        keys=['img', 'gt_bboxes', 'gt_labels', 'gt_bboxes_ignore', 'gt_occs', 'gt_direct'],
         meta_keys=('filename', 'ori_filename', 'ori_shape', 'img_shape',
                    'pad_shape', 'scale_factor', 'flip', 'flip_direction',
                    'img_norm_cfg'))  # v1.1-1  v1.1-2
@@ -136,13 +138,13 @@ data = dict(
         type=dataset_type,
         classes=CLASSES,
         ann_file=data_root + 'annotations/val.json',
-        img_prefix=data_root + 'train/',
+        img_prefix=data_root + 'val/',
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
         classes=CLASSES,
         ann_file=data_root + 'annotations/val.json',
-        img_prefix=data_root + 'train/',
+        img_prefix=data_root + 'val/',
         pipeline=test_pipeline))
 
 ######################################################################################################  # noqa E501,266

@@ -343,7 +343,8 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
              gt_labels,
              img_metas,
              gt_bboxes_ignore=None,
-             gt_occs=None):
+             gt_occs=None,
+             gt_direct=None):
         """Compute loss of the head.
         Args:
             cls_scores (list[Tensor]): Box scores for each scale level,
@@ -393,12 +394,12 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         flatten_bboxes = self._bbox_decode(flatten_priors, flatten_bbox_preds)
 
         (pos_masks, cls_targets, obj_targets, bbox_targets, l1_targets,
-         num_fg_imgs, ignore_weight_map, occs_weight_map) = multi_apply(
+         num_fg_imgs, ignore_weight_map, occs_weight_map, direct_weight_map) = multi_apply(
              self._get_target_single, flatten_cls_preds.detach(),
              flatten_objectness.detach(),
              flatten_priors.unsqueeze(0).repeat(num_imgs, 1, 1),
              flatten_bboxes.detach(), gt_bboxes, gt_labels, gt_bboxes_ignore,
-             gt_occs)  # v1.1-2
+             gt_occs, gt_direct)  # v1.1-2
 
         # The experimental results show that ‘reduce_mean’ can improve
         # performance on the COCO dataset.
@@ -414,6 +415,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         bbox_targets = torch.cat(bbox_targets, 0)
         ignore_weight_map = torch.cat(ignore_weight_map, 0)  # v1.1-2
         occs_weight_map = torch.cat(occs_weight_map, 0)
+        direct_weight_map = torch.cat(direct_weight_map, 0)
 
         ##################### TODO: occlusion weight soft-label for classification / hard minging for regression  v1.1-1  # noqa E501,251
         #         occ_cls_weight_type='Linear',  # v1.1-1  current types: 'None','Linear',etc.  # noqa E501
@@ -427,6 +429,9 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         occ_cls_weight_map = occs_weight_map.clone()
         occ_reg_weight_map = occs_weight_map.clone()
 
+        direct_cls_weight_map = direct_weight_map.clone()
+        direct_reg_weight_map = direct_weight_map.clone()
+
         ####################################################################################################  # noqa E501,266
 
         if self.use_l1:
@@ -436,7 +441,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
             flatten_bboxes.view(-1, 4)[pos_masks], bbox_targets)
         loss_bbox = torch.sum(
             loss_bbox * ignore_weight_map[pos_masks] *
-            occ_reg_weight_map[pos_masks]) / num_total_samples  # v1.1-2
+            occ_reg_weight_map[pos_masks] * direct_reg_weight_map[pos_masks]) / num_total_samples  # v1.1-2
 
         # loss_obj = self.loss_obj(flatten_objectness.view(-1, 1),
         #                          obj_targets)
@@ -453,7 +458,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
             cls_targets)
         loss_cls = torch.sum(
             torch.sum(loss_cls, 1) * ignore_weight_map[pos_masks] *
-            occ_cls_weight_map[pos_masks]) / num_total_samples  # v1.1-2
+            occ_cls_weight_map[pos_masks] * direct_cls_weight_map[pos_masks]) / num_total_samples  # v1.1-2
 
         loss_dict = dict(
             loss_cls=loss_cls, loss_bbox=loss_bbox, loss_obj=loss_obj)
@@ -487,7 +492,8 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
                            gt_bboxes,
                            gt_labels,
                            gt_bboxes_ignore=None,
-                           gt_bboxes_occs=None):
+                           gt_bboxes_occs=None,
+                           gt_bboxes_direct=None):
         # v1.1-2
         """Compute classification, regression, and objectness targets for
         priors in a single image.
@@ -518,13 +524,14 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         if num_gts == 0:
             ignore_weight_map = torch.ones_like(objectness).float()  # v1.1-2
             occs_weight_map = torch.ones_like(objectness).float()  # v1.1-6
+            direct_weight_map = torch.ones_like(objectness).float() #v1.1-6
             cls_target = cls_preds.new_zeros((0, self.num_classes))
             bbox_target = cls_preds.new_zeros((0, 4))
             l1_target = cls_preds.new_zeros((0, 4))
             obj_target = cls_preds.new_zeros((num_priors, 1))
             foreground_mask = cls_preds.new_zeros(num_priors).bool()
             return (foreground_mask, cls_target, obj_target, bbox_target,
-                    l1_target, 0, ignore_weight_map, occs_weight_map)
+                    l1_target, 0, ignore_weight_map, occs_weight_map,direct_weight_map)
 
         # YOLOX uses center priors with 0.5 offset to assign targets,
         # but use center priors without offset to regress bboxes.
@@ -539,9 +546,11 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         ############# TODO: v1.1-2 ignore bboxes + bboxes assigning and indexing (need to validate) ###############  # noqa E501,266
         ignore_weight_map = torch.ones_like(objectness).float()
         occs_weight_map = torch.ones_like(objectness).float()
+        direct_weight_map = torch.ones_like(objectness).float()
         if num_igs != 0:
-            with_ignore = self.train_cfg.get('with_ignore', False)  # v1.1-6
-            with_occ = self.train_cfg.get('with_occ', False)  # v1.1-6
+            with_ignore = self.train_cfg.get('with_ignore', False) # v1.1-6
+            with_occ = self.train_cfg.get('with_occ', False) # v1.1-6
+            with_direct = self.train_cfg.get('with_direct', False)  # v1.1-6
             if with_ignore:
                 gt_bboxes_ignore = gt_bboxes_ignore.to(
                     decoded_bboxes.dtype)  # v1.1-6
@@ -552,15 +561,33 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
                     decoded_bboxes.dtype)  # v1.1-6
             else:
                 gt_bboxes_occs = decoded_bboxes.new_empty(0, )  # v1.1-6
+                gt_bboxes_occs = decoded_bboxes.new_empty(0, ) # v1.1-6
+
+            if with_direct:
+                gt_bboxes_direct = gt_bboxes_direct.to(decoded_bboxes.dtype)
+            else:
+                gt_bboxes_direct = decoded_bboxes.new_empty(0, )
+
+           
+           
+           
+           
+           
+           
             # normalize
             gt_bboxes_occs /= 100  # v1.1-6
+            # gt_bboxes_direct /= 100
 
             gt_bboxes_all = torch.cat((gt_bboxes, gt_bboxes_ignore))
             gt_labels_all = torch.cat(
                 (gt_labels, gt_labels.new_zeros(num_igs)))
 
+            gt_bboxes_direct_all = torch.cat(
+                (gt_bboxes_direct, gt_bboxes_direct.new_zeros(num_igs))) # v1.1-6
+
             gt_bboxes_occs_all = torch.cat(
                 (gt_bboxes_occs, gt_bboxes_occs.new_zeros(num_igs)))  # v1.1-6
+
             assign_result = self.assigner.assign(
                 cls_preds.sigmoid() * objectness.unsqueeze(1).sigmoid(),
                 offset_priors, decoded_bboxes, gt_bboxes_all, gt_labels_all
@@ -570,9 +597,13 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
             for ig_indx in range(num_gts, num_gts + num_igs):
                 ignore_weight_map[sampling_result.pos_inds[torch.nonzero(
                     sampling_result.pos_assigned_gt_inds == ig_indx)]] = 0.0
+
             occs_weight_map[sampling_result.pos_inds] += torch.exp(
                 -gt_bboxes_occs_all[sampling_result.pos_assigned_gt_inds]
             )  # v1.1-6
+            direct_weight_map[sampling_result.pos_inds] += torch.exp(
+                -gt_bboxes_direct_all[sampling_result.pos_assigned_gt_inds]
+            )
         else:
             assign_result = self.assigner.assign(
                 cls_preds.sigmoid() * objectness.unsqueeze(1).sigmoid(),
@@ -597,8 +628,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         foreground_mask = torch.zeros_like(objectness).to(torch.bool)
         foreground_mask[pos_inds] = 1
         return (foreground_mask, cls_target, obj_target, bbox_target,
-                l1_target, num_pos_per_img, ignore_weight_map, occs_weight_map
-                )  # v1.1-6
+                l1_target, num_pos_per_img, ignore_weight_map, occs_weight_map, direct_weight_map) # v1.1-6
 
     def _get_l1_target(self, l1_target, gt_bboxes, priors, eps=1e-8):
         """Convert gt bboxes to center offset and log width height."""
@@ -614,6 +644,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
                       gt_labels=None,
                       gt_bboxes_ignore=None,
                       gt_occs=None,
+                      gt_direct=None,
                       proposal_cfg=None,
                       **kwargs):
         """
@@ -641,7 +672,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         else:
             loss_inputs = outs + (gt_bboxes, gt_labels, img_metas)
         losses = self.loss(
-            *loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore, gt_occs=gt_occs)
+            *loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore, gt_occs=gt_occs, gt_direct=gt_direct)
         if proposal_cfg is None:
             return losses
         else:
