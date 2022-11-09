@@ -150,7 +150,7 @@ class CocoDataset_datang(CustomDataset):
         gt_occs = []  # v1.1-1
         gt_direct = []
         occ_ignore_thre = [
-            80, 80, 80, 80, 80, 80, 80, 80,80,80,80
+            80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80
         ]  # v1.1-1 and v1.1-2 set occ ignore threshold # noqa E501
         direct_ignore_thre = [80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80]
         # occ_ignore_thre = [10, 10, 10, 10, 10, 10, 10, 10]
