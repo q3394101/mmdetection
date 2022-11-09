@@ -254,7 +254,10 @@ class LoadAnnotations:
             dict: The dict contains loaded occlusion annotations.
         """
         ann_info = results['ann_info']
-        results['gt_occs'] = ann_info['occ'].copy()
+        results['gt_occs'] = ann_info.get('occ',
+                                          np.empty([
+                                              0,
+                                          ], dtype=np.float32)).copy()
         return results
 
     def _load_bboxes(self, results):

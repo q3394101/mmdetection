@@ -1,14 +1,19 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import random
 
+import numpy as np
 import torch
 import torch.distributed as dist
 import torch.nn.functional as F
 from mmcv.runner import get_dist_info
 
+from mmdet import global_var as gv
+from mmdet.core import bbox2result
 from ...utils import log_img_scale
 from ..builder import DETECTORS
 from .single_stage import SingleStageDetector
+
+DEBUG = gv.DEBUG
 
 
 @DETECTORS.register_module()
@@ -144,3 +149,71 @@ class YOLOX(SingleStageDetector):
 
         input_size = (tensor[0].item(), tensor[1].item())
         return input_size
+
+    def simple_test(self, img, img_metas, rescale=False):
+        """Test function without test-time augmentation.
+
+        Args:
+            img (torch.Tensor): Images with shape (N, C, H, W).
+            img_metas (list[dict]): List of image information.
+            rescale (bool, optional): Whether to rescale the results.
+                Defaults to False.
+
+        Returns:
+            list[list[np.ndarray]]: BBox results of each image and classes.
+                The outer list corresponds to each image. The inner list
+                corresponds to each class.
+        """
+        if DEBUG and gv.get_value('save_mode', False):
+            global_cnt = gv.get_value('global_cnt', 0)
+            input_path = f"{gv.get_value('path')}/input_{global_cnt}"
+            if global_cnt >= gv.get_value('max_cnt', 100):
+                gv.set_value('save_mode', False)
+            else:
+                np.save(input_path, img.detach().cpu().numpy())
+        feat = self.extract_feat(img)
+        if DEBUG and gv.get_value('save_mode', False):
+            results_list = self.simple_test_bboxes(
+                self.bbox_head, feat, img_metas, rescale=rescale)
+        else:
+            results_list = self.bbox_head.simple_test(
+                feat, img_metas, rescale=rescale)
+        bbox_results = [
+            bbox2result(det_bboxes, det_labels, self.bbox_head.num_classes)
+            for det_bboxes, det_labels in results_list
+        ]
+        return bbox_results
+
+    @staticmethod
+    def simple_test_bboxes(self, feats, img_metas, rescale=False):
+        """Test det bboxes without test-time augmentation, can be applied in
+        DenseHead except for ``RPNHead`` and its variants, e.g., ``GARPNHead``,
+        etc.
+
+        Args:
+            feats (tuple[torch.Tensor]): Multi-level features from the
+                upstream network, each is a 4D-tensor.
+            img_metas (list[dict]): List of image information.
+            rescale (bool, optional): Whether to rescale the results.
+                Defaults to False.
+
+        Returns:
+            list[tuple[Tensor, Tensor]]: Each item in result_list is 2-tuple.
+                The first item is ``bboxes`` with shape (n, 5),
+                where 5 represent (tl_x, tl_y, br_x, br_y, score).
+                The shape of the second tensor in the tuple is ``labels``
+                with shape (n,)
+        """
+        outs = self.forward(feats)
+        if DEBUG and gv.get_value('save_mode', False):
+            global_cnt = gv.get_value('global_cnt', 0)
+            output_path = f"{gv.get_value('path')}/output_{global_cnt}"
+            all_outs = {
+                'x'.join(map(str, j.shape)): j.detach().cpu().numpy()
+                for i in outs for j in i
+            }
+            np.savez(output_path, **all_outs)
+            gv.set_value('global_cnt', global_cnt + 1)
+        results_list = self.get_bboxes(
+            *outs, img_metas=img_metas, rescale=rescale)
+        return results_list

@@ -2012,7 +2012,8 @@ class Mosaic:
                  bbox_clip_border=True,
                  skip_filter=True,
                  pad_val=114,
-                 prob=1.0):
+                 prob=1.0,
+                 with_ignore_and_occs=False):
         assert isinstance(img_scale, tuple)
         assert 0 <= prob <= 1.0, 'The probability should be in range [0,1]. '\
             f'got {prob}.'
@@ -2025,6 +2026,7 @@ class Mosaic:
         self.skip_filter = skip_filter
         self.pad_val = pad_val
         self.prob = prob
+        self.with_ignore_and_occs = with_ignore_and_occs
 
     def __call__(self, results):
         """Call function to make a mosaic of image.
@@ -2068,7 +2070,7 @@ class Mosaic:
         assert 'mix_results' in results
         mosaic_labels = []
         mosaic_bboxes = []
-        mosaic_other_info = []
+        mosaic_other_info = [] if self.with_ignore_and_occs else None
         if len(results['img'].shape) == 3:
             mosaic_img = np.full(
                 (int(self.img_scale[0] * 2), int(self.img_scale[1] * 2), 3),
@@ -2114,9 +2116,10 @@ class Mosaic:
             # adjust coordinate
             gt_bboxes_i = results_patch['gt_bboxes']
             gt_labels_i = results_patch['gt_labels']
-            gt_other_info_i = [
-                results_patch['gt_bboxes_ignore'], results_patch['gt_occs']
-            ]
+            if self.with_ignore_and_occs:
+                gt_other_info_i = [
+                    results_patch['gt_bboxes_ignore'], results_patch['gt_occs']
+                ]
 
             if gt_bboxes_i.shape[0] > 0:
                 padw = x1_p - x1_c
@@ -2128,14 +2131,20 @@ class Mosaic:
 
             mosaic_bboxes.append(gt_bboxes_i)
             mosaic_labels.append(gt_labels_i)
-            mosaic_other_info.append(gt_other_info_i)
+            if self.with_ignore_and_occs:
+                mosaic_other_info.append(gt_other_info_i)
 
         if len(mosaic_labels) > 0:
             mosaic_bboxes = np.concatenate(mosaic_bboxes, 0)
             mosaic_labels = np.concatenate(mosaic_labels, 0)
-            mosaic_ignores = np.concatenate([i[0] for i in mosaic_other_info],
-                                            0)
-            mosaic_occs = np.concatenate([i[1] for i in mosaic_other_info], 0)
+            if self.with_ignore_and_occs:
+                mosaic_ignores = np.concatenate(
+                    [i[0] for i in mosaic_other_info], 0)
+                mosaic_occs = np.concatenate([i[1] for i in mosaic_other_info],
+                                             0)
+            else:
+                mosaic_ignores = None
+                mosaic_occs = None
 
             if self.bbox_clip_border:
                 mosaic_bboxes[:, 0::2] = np.clip(mosaic_bboxes[:, 0::2], 0,
@@ -2154,14 +2163,16 @@ class Mosaic:
                                          2 * self.img_scale[1])
         mosaic_bboxes = mosaic_bboxes[inside_inds]
         mosaic_labels = mosaic_labels[inside_inds]
-        mosaic_occs = mosaic_occs[inside_inds]
+        if self.with_ignore_and_occs:
+            mosaic_occs = mosaic_occs[inside_inds]
 
         results['img'] = mosaic_img
         results['img_shape'] = mosaic_img.shape
         results['gt_bboxes'] = mosaic_bboxes
         results['gt_labels'] = mosaic_labels
-        results['gt_bboxes_ignore'] = mosaic_ignores
-        results['gt_occs'] = mosaic_occs
+        if self.with_ignore_and_occs:
+            results['gt_bboxes_ignore'] = mosaic_ignores
+            results['gt_occs'] = mosaic_occs
 
         return results
 
