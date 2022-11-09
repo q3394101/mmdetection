@@ -16,13 +16,14 @@ model = dict(
         num_csp_blocks=1),
     bbox_head=dict(
         type='YOLOXHead', num_classes=80, in_channels=128, feat_channels=128),
-    train_cfg=dict(assigner=dict(type='SimOTAAssigner', center_radius=2.5)),
+    train_cfg=dict(assigner=dict(type='ATSSAssigner', topk=9)),
+    # train_cfg=dict(assigner=dict(type='SimOTAAssigner', center_radius=2.5)),
     # In order to align the source code, the threshold of the val phase is
     # 0.01, and the threshold of the test phase is 0.001.
     test_cfg=dict(score_thr=0.01, nms=dict(type='nms', iou_threshold=0.65)))
 
 # dataset settings
-data_root = 'data/coco/'
+data_root = '/home/chenzhen/code/detection/datasets/coco100/'
 dataset_type = 'CocoDataset'
 
 train_pipeline = [
@@ -57,8 +58,8 @@ train_dataset = dict(
     type='MultiImageMixDataset',
     dataset=dict(
         type=dataset_type,
-        ann_file=data_root + 'annotations/instances_train2017.json',
-        img_prefix=data_root + 'train2017/',
+        ann_file=data_root + 'annotations/train.json',
+        img_prefix=data_root + 'train/',
         pipeline=[
             dict(type='LoadImageFromFile'),
             dict(type='LoadAnnotations', with_bbox=True)
@@ -92,13 +93,13 @@ data = dict(
     train=train_dataset,
     val=dict(
         type=dataset_type,
-        ann_file=data_root + 'annotations/instances_val2017.json',
-        img_prefix=data_root + 'val2017/',
+        ann_file=data_root + 'annotations/val.json',
+        img_prefix=data_root + 'train/',
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
-        ann_file=data_root + 'annotations/instances_val2017.json',
-        img_prefix=data_root + 'val2017/',
+        ann_file=data_root + 'annotations/val.json',
+        img_prefix=data_root + 'train/',
         pipeline=test_pipeline))
 
 # optimizer

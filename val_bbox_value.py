@@ -62,9 +62,9 @@ def analyze_per_img_dets(result_matrix,
 
 
 def main():
-    prediction_path = "/home/chenzhen/dt_mmdetection/tools/2399_results.pkl"
+    prediction_path = "/home/chenzhen/code/detection/mmdetection/result/jichu_result.pkl"
     # prediction_path = "/home/chenzhen/dt_mmdetection/tools/2399_40_results.pkl"
-    config = "/home/chenzhen/dt_mmdetection/configs/yolox/yolox_s_temp.py"
+    config = "/home/chenzhen/code/detection/mmdetection/configs/datang_detection/yolox_s_8x8_300e_coco.py"
     cfg = Config.fromfile(config)
     cfg = replace_cfg_vals(cfg)
     update_data_root(cfg)
@@ -83,7 +83,7 @@ def main():
             ds_cfg.test_mode = True
     dataset = build_dataset(cfg.data.test)
     confusion_matrix = calculate_confusion_matrix(dataset, results,
-                                                  score_thr=0.75,
+                                                  score_thr=0.3,
                                                   tp_iou_thr=0.75)
     np.set_printoptions(precision=4, suppress=True)
     print(list(confusion_matrix[:,0]))
