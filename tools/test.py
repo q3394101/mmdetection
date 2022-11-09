@@ -283,4 +283,12 @@ def main():
 
 
 if __name__ == '__main__':
+    from mmdet import global_var as gv
+    gv._init()
+    gv.set_value('save_mode', True)
+    gv.set_value('global_cnt', 0)
+    gv.set_value('max_cnt', 100)
+    gv.set_value('path', 'work_dir/input_output_numpy')
+    if not osp.exists('work_dir/input_output_numpy'):
+        os.mkdir('work_dir/input_output_numpy')
     main()

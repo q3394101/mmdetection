@@ -58,6 +58,7 @@ train_pipeline = [
     #     img_scale=img_scale,
     #     ratio_range=(0.8, 1.6),
     #     pad_val=114.0),
+
     dict(type='YOLOXHSVRandomAug'),
     dict(type='RandomFlip', flip_ratio=0.5),
     # According to the official implementation, multi-scale
