@@ -102,6 +102,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         assert conv_bias == 'auto' or isinstance(conv_bias, bool)
         self.conv_bias = conv_bias
         self.use_sigmoid_cls = True
+
         self.conv_cfg = conv_cfg
         self.norm_cfg = norm_cfg
         self.act_cfg = act_cfg
@@ -114,6 +115,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         self.loss_l1 = build_loss(loss_l1)
 
         self.prior_generator = MlvlPointGenerator(strides, offset=0)
+
         self.test_cfg = test_cfg
         self.train_cfg = train_cfg
 
@@ -492,6 +494,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
             gt_bboxes_ignore:
             gt_bboxes_occs:
         """
+
         num_priors = priors.size(0)
         num_gts = gt_labels.size(0)
         num_igs = gt_bboxes_ignore.size(0)  # v1.1-2
@@ -523,25 +526,27 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         ignore_weight_map = torch.ones_like(objectness).float()
         occs_weight_map = torch.ones_like(objectness).float()
         if num_igs != 0:
-            with_ignore = self.train_cfg.get('with_ignore', False) # v1.1-6
-            with_occ = self.train_cfg.get('with_occ', False) # v1.1-6
+            with_ignore = self.train_cfg.get('with_ignore', False)  # v1.1-6
+            with_occ = self.train_cfg.get('with_occ', False)  # v1.1-6
             if with_ignore:
-                gt_bboxes_ignore = gt_bboxes_ignore.to(decoded_bboxes.dtype) # v1.1-6
+                gt_bboxes_ignore = gt_bboxes_ignore.to(
+                    decoded_bboxes.dtype)  # v1.1-6
             else:
-                gt_bboxes_ignore = decoded_bboxes.new_empty(0, 4) # v1.1-6
+                gt_bboxes_ignore = decoded_bboxes.new_empty(0, 4)  # v1.1-6
             if with_occ:
-                gt_bboxes_occs = gt_bboxes_occs.to(decoded_bboxes.dtype) # v1.1-6
+                gt_bboxes_occs = gt_bboxes_occs.to(
+                    decoded_bboxes.dtype)  # v1.1-6
             else:
-                gt_bboxes_occs = decoded_bboxes.new_empty(0, ) # v1.1-6
+                gt_bboxes_occs = decoded_bboxes.new_empty(0, )  # v1.1-6
             # normalize
-            gt_bboxes_occs /= 100 # v1.1-6
+            gt_bboxes_occs /= 100  # v1.1-6
 
             gt_bboxes_all = torch.cat((gt_bboxes, gt_bboxes_ignore))
             gt_labels_all = torch.cat(
                 (gt_labels, gt_labels.new_zeros(num_igs)))
 
             gt_bboxes_occs_all = torch.cat(
-                (gt_bboxes_occs, gt_bboxes_occs.new_zeros(num_igs))) # v1.1-6
+                (gt_bboxes_occs, gt_bboxes_occs.new_zeros(num_igs)))  # v1.1-6
             assign_result = self.assigner.assign(
                 cls_preds.sigmoid() * objectness.unsqueeze(1).sigmoid(),
                 offset_priors, decoded_bboxes, gt_bboxes_all, gt_labels_all
@@ -575,12 +580,11 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         if self.use_l1:
             l1_target = self._get_l1_target(l1_target, bbox_target,
                                             priors[pos_inds])
-
         foreground_mask = torch.zeros_like(objectness).to(torch.bool)
         foreground_mask[pos_inds] = 1
-
         return (foreground_mask, cls_target, obj_target, bbox_target,
-                l1_target, num_pos_per_img, ignore_weight_map, occs_weight_map) # v1.1-6
+                l1_target, num_pos_per_img, ignore_weight_map, occs_weight_map
+                )  # v1.1-6
 
     def _get_l1_target(self, l1_target, gt_bboxes, priors, eps=1e-8):
         """Convert gt bboxes to center offset and log width height."""
