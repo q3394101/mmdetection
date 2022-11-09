@@ -1,14 +1,16 @@
 import matplotlib
-matplotlib.use('TkAgg')
 import mmcv
 import numpy as np
 from mmcv import Config
 from mmcv.ops import nms
 
-from mmdet.core.evaluation.bbox_overlaps import bbox_overlaps
 from mmdet.core.evaluation.bbox_area import bbox_area
+from mmdet.core.evaluation.bbox_overlaps import bbox_overlaps
 from mmdet.datasets import build_dataset
 from mmdet.utils import replace_cfg_vals, update_data_root
+
+matplotlib.use('TkAgg')
+
 
 def calculate_confusion_matrix(dataset,
                                results,
@@ -29,9 +31,10 @@ def calculate_confusion_matrix(dataset,
         gt_bboxes = ann['bboxes']
         labels = ann['labels']
         analyze_per_img_dets(confusion_matrix, gt_bboxes, labels, res_bboxes,
-                             score_thr, tp_iou_thr, nms_iou_thr,area_size)
+                             score_thr, tp_iou_thr, nms_iou_thr, area_size)
         prog_bar.update()
     return confusion_matrix
+
 
 def analyze_per_img_dets(confusion_matrix,
                          gt_bboxes,
@@ -42,7 +45,8 @@ def analyze_per_img_dets(confusion_matrix,
                          nms_iou_thr=None,
                          area_size=None):
     if area_size:
-        area_gt = (gt_bboxes[:, 2] - gt_bboxes[:, 0]) * (gt_bboxes[:, 3] - gt_bboxes[:, 1])
+        area_gt = (gt_bboxes[:, 2] - gt_bboxes[:, 0]) * (
+            gt_bboxes[:, 3] - gt_bboxes[:, 1])
         mask = (area_gt > area_size[0]) & (area_gt <= area_size[1])
         gt_bboxes = gt_bboxes[mask]
         gt_labels = gt_labels[mask]
@@ -56,7 +60,7 @@ def analyze_per_img_dets(confusion_matrix,
                 score_threshold=score_thr)
         ious = bbox_overlaps(det_bboxes[:, :4], gt_bboxes)
         if area_size:
-            det_bboxes = bbox_area(det_bboxes,area_size)
+            det_bboxes = bbox_area(det_bboxes, area_size)
         for i, det_bbox in enumerate(det_bboxes):
             score = det_bbox[4]
             det_match = 0
@@ -73,10 +77,11 @@ def analyze_per_img_dets(confusion_matrix,
         if num_tp == 0:  # FN
             confusion_matrix[gt_label, -1] += 1
 
+
 def main():
-    # prediction_path = "/home/chenzhen/dt_mmdetection/tools/2399_40_results.pkl"
-    config = "/home/chenzhen/code/detection/mmdetection/configs/datang_detection/yolox_s_8x8_300e_coco.py"
-    prediction_path = "/home/chenzhen/code/detection/mmdetection/result/jichu_result.pkl"
+    # prediction_path = "/home/chenzhen/dt_mmdetection/tools/2399_40_results.pkl" # noqa E501
+    config = '/home/chenzhen/code/detection/mmdetection/configs/datang_detection/yolox_s_8x8_300e_coco.py'  # noqa E501
+    prediction_path = '/home/chenzhen/code/detection/mmdetection/result/jichu_result.pkl'  # noqa E501
     area_size = None
     cfg = Config.fromfile(config)
     cfg = replace_cfg_vals(cfg)
@@ -95,21 +100,21 @@ def main():
         for ds_cfg in cfg.data.test:
             ds_cfg.test_mode = True
     dataset = build_dataset(cfg.data.test)
-    confusion_matrix = calculate_confusion_matrix(dataset, results,
-                                                  score_thr=0.3,
-                                                  nms_iou_thr=None,
-                                                  tp_iou_thr=0.75,
-                                                  area_size=area_size)
+    confusion_matrix = calculate_confusion_matrix(
+        dataset,
+        results,
+        score_thr=0.3,
+        nms_iou_thr=None,
+        tp_iou_thr=0.75,
+        area_size=area_size)
     np.set_printoptions(precision=4, suppress=True)
     tp = confusion_matrix.diagonal()
-    fp = confusion_matrix.sum(0) - tp # false positives
+    fp = confusion_matrix.sum(0) - tp  # false positives
     fn = confusion_matrix[:, -1]  # false negatives (missed detections)
     cla_num = tp + fn
-    print("\nconfusion_matrix", confusion_matrix)
-    print('\ntp', tp,
-          '\nfp', fp,
-          '\nfn', fn,
-          '\ncla_num', cla_num)
+    print('\nconfusion_matrix', confusion_matrix)
+    print('\ntp', tp, '\nfp', fp, '\nfn', fn, '\ncla_num', cla_num)
+
 
 if __name__ == '__main__':
     main()

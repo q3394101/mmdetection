@@ -1,33 +1,35 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import warnings
-import torch.nn as nn
+
 import mmcv
 import torch
+import torch.nn as nn
 
 from ..builder import LOSSES
 from .utils import weighted_loss
+
 pdist = nn.PairwiseDistance(p=2)
 
 
 @mmcv.jit(derivate=True, coderize=True)
 @weighted_loss
-def bound_loss(pred, target, linear=False, mode='linear',eps=1e-16):
+def bound_loss(pred, target, linear=False, mode='linear', eps=1e-16):
     """Bbox loss.
 
-        Computing the Bbox loss between a set of predicted bboxes and target bboxes.
-        The loss is calculated as negative log of Bbox.
+    Computing the Bbox loss between a set of predicted bboxes and target bboxes.  # noqa E501
+    The loss is calculated as negative log of Bbox.
 
-        Args:
-            pred (torch.Tensor): Predicted bboxes of format (x1, y1, x2, y2),
-                shape (n, 4).
-            target (torch.Tensor): Corresponding gt bboxes, shape (n, 4).
-            linear (bool, optional): If True, use linear scale of loss instead of
-                log scale. Default: False.
-            eps (float): Eps to avoid log(0).
+    Args:
+        pred (torch.Tensor): Predicted bboxes of format (x1, y1, x2, y2),
+            shape (n, 4).
+        target (torch.Tensor): Corresponding gt bboxes, shape (n, 4).
+        linear (bool, optional): If True, use linear scale of loss instead of
+            log scale. Default: False.
+        eps (float): Eps to avoid log(0).
 
-        Return:
-            torch.Tensor: Loss tensor.
-        """
+    Return:
+        torch.Tensor: Loss tensor.
+    """
     assert mode in ['linear', 'square', 'log']
     if linear:
         mode = 'linear'
@@ -36,10 +38,10 @@ def bound_loss(pred, target, linear=False, mode='linear',eps=1e-16):
                       'instead.')
     loss = cla_line_point(pred, target).clamp(min=eps)
 
-    if mode == "linear":
+    if mode == 'linear':
         loss = loss
     elif mode == 'square':
-        loss = 1 - loss ** 2
+        loss = 1 - loss**2
     elif mode == 'log':
         loss = -loss.log()
     else:
@@ -50,13 +52,14 @@ def bound_loss(pred, target, linear=False, mode='linear',eps=1e-16):
 def cla_line_point(bboxes1, bboxes2):
     det_point_y = bboxes1[..., 1] + ((bboxes1[..., 3] - bboxes1[..., 1]) / 2)
     det_point_x = bboxes1[..., 2]
-    det_point = (det_point_x, det_point_y)
+    # det_point = (det_point_x, det_point_y)
 
     gt_point_y = bboxes2[..., 1] + ((bboxes2[..., 3] - bboxes2[..., 1]) / 2)
     gt_point_x = bboxes2[..., 0]
-    gt_point = (gt_point_x, gt_point_y)
+    # gt_point = (gt_point_x, gt_point_y)
 
-    point_val_result = (((gt_point_x - det_point_x) ** 2) + ((gt_point_y - det_point_y) ** 2)).sqrt()
+    point_val_result = (((gt_point_x - det_point_x)**2) +
+                        ((gt_point_y - det_point_y)**2)).sqrt()
 
     # point_val_result = pdist(gt_point, det_point)
 
@@ -66,21 +69,23 @@ def cla_line_point(bboxes1, bboxes2):
 
     return result
 
+
 @LOSSES.register_module()
 class BoundLoss(nn.Module):
     """BBoxLoss.
 
-        Computing the BBox loss between a set of predicted bboxes and target bboxes.
+    Computing the BBox loss between a set of predicted bboxes and target bboxes.  # noqa E501
 
-        Args:
-            linear (bool): If True, use linear scale of loss else determined
-                by mode. Default: False.
-            eps (float): Eps to avoid log(0).
-            reduction (str): Options are "none", "mean" and "sum".
-            loss_weight (float): Weight of loss.
-            mode (str): Loss scaling mode, including "linear", "square", and "log".
-                Default: 'log'
-        """
+    Args:
+        linear (bool): If True, use linear scale of loss else determined
+            by mode. Default: False.
+        eps (float): Eps to avoid log(0).
+        reduction (str): Options are "none", "mean" and "sum".
+        loss_weight (float): Weight of loss.
+        mode (str): Loss scaling mode, including "linear", "square", and "log".
+            Default: 'log'
+    """
+
     def __init__(self,
                  linear=False,
                  eps=1e-6,
