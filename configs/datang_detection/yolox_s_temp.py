@@ -90,7 +90,10 @@ train_pipeline = [
     dict(type='DefaultFormatBundle'),
     dict(
         type='Collect',
-        keys=['img', 'gt_bboxes', 'gt_labels', 'gt_bboxes_ignore', 'gt_occs', 'gt_direct'],
+        keys=[
+            'img', 'gt_bboxes', 'gt_labels', 'gt_bboxes_ignore', 'gt_occs',
+            'gt_direct'
+        ],
         meta_keys=('filename', 'ori_filename', 'ori_shape', 'img_shape',
                    'pad_shape', 'scale_factor', 'flip', 'flip_direction',
                    'img_norm_cfg'))  # v1.1-1  v1.1-2

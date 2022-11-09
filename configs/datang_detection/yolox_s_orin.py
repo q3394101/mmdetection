@@ -21,12 +21,14 @@ model = dict(
         num_classes=len(CLASSES),
         in_channels=128,
         feat_channels=128),
-    train_cfg=dict(assigner=dict(type='SimOTAAssigner', center_radius=2.5),
-                   occ_cls_weight_type='Linear',
-                   occ_reg_weight_type='Linear',
-                   with_ignore=True,
-                   bound_weight=[1.0, 2.0, 1.0, 1.0],
-                   with_occ=True,),
+    train_cfg=dict(
+        assigner=dict(type='SimOTAAssigner', center_radius=2.5),
+        occ_cls_weight_type='Linear',
+        occ_reg_weight_type='Linear',
+        with_ignore=True,
+        bound_weight=[1.0, 2.0, 1.0, 1.0],
+        with_occ=True,
+    ),
     # In order to align the source code, the threshold of the val phase is
     # 0.01, and the threshold of the test phase is 0.001.
     test_cfg=dict(score_thr=0.01, nms=dict(type='nms', iou_threshold=0.65)))
@@ -36,11 +38,12 @@ data_root = 'data/coco/'
 dataset_type = 'CocoDataset_datang'
 
 train_pipeline = [
-    dict(type='Mosaic',
-         img_scale=img_scale,
-         pad_val=114.0,
-         center_ratio_range=(1.0, 1.0),
-         with_ignore_and_occs=ignore_and_occs),
+    dict(
+        type='Mosaic',
+        img_scale=img_scale,
+        pad_val=114.0,
+        center_ratio_range=(1.0, 1.0),
+        with_ignore_and_occs=ignore_and_occs),
     dict(
         type='RandomAffine',
         scaling_ratio_range=(0.1, 2),
@@ -51,7 +54,6 @@ train_pipeline = [
     #     img_scale=img_scale,
     #     ratio_range=(0.8, 1.6),
     #     pad_val=114.0),
-
     dict(type='YOLOXHSVRandomAug'),
     dict(type='RandomFlip', flip_ratio=0.5),
     # According to the official implementation, multi-scale
@@ -66,12 +68,12 @@ train_pipeline = [
         pad_val=dict(img=(114.0, 114.0, 114.0))),
     dict(type='FilterAnnotations', min_gt_bbox_wh=(1, 1), keep_empty=False),
     dict(type='DefaultFormatBundle'),
-    dict(type='Collect',
-         keys=['img', 'gt_bboxes', 'gt_labels', 'gt_bboxes_ignore', 'gt_occs'],
-         meta_keys=('filename', 'ori_filename', 'ori_shape', 'img_shape',
-                    'pad_shape', 'scale_factor', 'flip', 'flip_direction',
-                    'img_norm_cfg')
-         )
+    dict(
+        type='Collect',
+        keys=['img', 'gt_bboxes', 'gt_labels', 'gt_bboxes_ignore', 'gt_occs'],
+        meta_keys=('filename', 'ori_filename', 'ori_shape', 'img_shape',
+                   'pad_shape', 'scale_factor', 'flip', 'flip_direction',
+                   'img_norm_cfg'))
 ]
 
 train_dataset = dict(
@@ -82,7 +84,10 @@ train_dataset = dict(
         img_prefix=data_root + 'train/',
         pipeline=[
             dict(type='LoadImageFromFile'),
-            dict(type='LoadAnnotations', with_bbox=True, with_occ=ignore_and_occs)
+            dict(
+                type='LoadAnnotations',
+                with_bbox=True,
+                with_occ=ignore_and_occs)
         ],
         filter_empty_gt=False,
     ),

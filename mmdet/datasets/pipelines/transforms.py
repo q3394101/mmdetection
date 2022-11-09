@@ -2118,7 +2118,9 @@ class Mosaic:
             gt_labels_i = results_patch['gt_labels']
             if self.with_ignore_and_occs:
                 gt_other_info_i = [
-                    results_patch['gt_bboxes_ignore'], results_patch['gt_occs'], results_patch['gt_direct']
+                    results_patch['gt_bboxes_ignore'],
+                    results_patch['gt_occs'],
+                    results_patch['gt_direct']
                 ]
 
             if gt_bboxes_i.shape[0] > 0:
@@ -2244,7 +2246,11 @@ class Mosaic:
         paste_coord = x1, y1, x2, y2
         return paste_coord, crop_coord
 
-    def _filter_box_candidates(self, bboxes, labels, mosaic_occs=None,mosaic_direct=None):
+    def _filter_box_candidates(self,
+                               bboxes,
+                               labels,
+                               mosaic_occs=None,
+                               mosaic_direct=None):
         """Filter out bboxes too small after Mosaic."""
         flag = (mosaic_occs or mosaic_direct) is not None
         bbox_w = bboxes[:, 2] - bboxes[:, 0]

@@ -21,14 +21,13 @@ from mmdet.utils import (collect_env, get_device, get_root_logger,
                          replace_cfg_vals, setup_multi_processes,
                          update_data_root)
 
-config = '/home/chenzhen/code/detection/mmdetection/configs/datang_detection/yolox_s_temp.py'
+config = '/home/chenzhen/code/detection/mmdetection/configs/datang_detection/yolox_s_temp.py'  # noqa E501
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a detector')
     parser.add_argument(
-        '--config',
-        help='train config file path',
-        default=config)
+        '--config', help='train config file path', default=config)
     parser.add_argument('--work-dir', help='the dir to save logs and models')
     parser.add_argument(
         '--resume-from', help='the checkpoint file to resume from')

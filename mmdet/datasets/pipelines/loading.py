@@ -240,7 +240,7 @@ class LoadAnnotations:
         self.with_label = with_label
         self.with_mask = with_mask
         self.with_seg = with_seg
-        self.with_occ = with_occ # v1.1-6
+        self.with_occ = with_occ  # v1.1-6
         self.with_direct = with_direct
         self.poly2mask = poly2mask
         self.denorm_bbox = denorm_bbox
@@ -272,11 +272,11 @@ class LoadAnnotations:
         """
         ann_info = results['ann_info']
         results['gt_direct'] = ann_info.get('direct',
-                                          np.empty([
+                                            np.empty([
                                               0,
                                           ], dtype=np.float32)).copy()
         return results
-    
+
     def _load_bboxes(self, results):
         """Private function to load bounding box annotations.
 
@@ -443,7 +443,7 @@ class LoadAnnotations:
         repr_str = self.__class__.__name__
         repr_str += f'(with_bbox={self.with_bbox}, '
         repr_str += f'with_label={self.with_label}, '
-        repr_str += f'with_occ={self.with_occ}, ' # v1.1-6
+        repr_str += f'with_occ={self.with_occ}, '  # v1.1-6
         repr_str += f'with_direct={self.with_direct}, '  # v1.1-6
         repr_str += f'with_mask={self.with_mask}, '
         repr_str += f'with_seg={self.with_seg}, '
@@ -668,7 +668,7 @@ class FilterAnnotations:
 
         keep = keep.nonzero()[0]
         #  v1.1-1
-        keys = ('gt_bboxes', 'gt_labels', 'gt_masks', 'gt_occs')
+        keys = ('gt_bboxes', 'gt_labels', 'gt_masks', 'gt_occs')  # v1.1-6
         for key in keys:
             if key in results:
                 results[key] = results[key][keep]

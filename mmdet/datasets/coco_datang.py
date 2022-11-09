@@ -151,9 +151,7 @@ class CocoDataset_datang(CustomDataset):
         occ_ignore_thre = [
             80, 80, 80, 80, 80, 80, 80, 80
         ]  # v1.1-1 and v1.1-2 set occ ignore threshold # noqa E501
-        direct_ignore_thre = [
-            80, 80, 80, 80, 80, 80, 80, 80
-        ]
+        direct_ignore_thre = [80, 80, 80, 80, 80, 80, 80, 80]
         # occ_ignore_thre = [10, 10, 10, 10, 10, 10, 10, 10]
         for i, ann in enumerate(ann_info):
             if ann.get('ignore', False):
@@ -208,9 +206,8 @@ class CocoDataset_datang(CustomDataset):
             bboxes_ignore=gt_bboxes_ignore,
             masks=gt_masks_ann,
             seg_map=seg_map,
-            occ=gt_occs, # v1.1-1
-            direct=gt_direct
-        )
+            occ=gt_occs,  # v1.1-1
+            direct=gt_direct)
 
         return ann
 

@@ -1,7 +1,6 @@
 import math
 
 import matplotlib
-matplotlib.use('TkAgg')
 import mmcv
 import numpy as np
 import torch.nn as nn
@@ -10,7 +9,10 @@ from mmcv import Config
 from mmdet.core.evaluation.bbox_overlaps import bbox_overlaps
 from mmdet.datasets import build_dataset
 from mmdet.utils import replace_cfg_vals, update_data_root
+
+matplotlib.use('TkAgg')
 pair = nn.PairwiseDistance(p=2)
+
 
 def calculate_confusion_matrix(dataset,
                                results,
@@ -28,16 +30,20 @@ def calculate_confusion_matrix(dataset,
         ann = dataset.get_ann_info(idx)
         gt_bboxes = ann['bboxes']
         labels = ann['labels']
-        analyze_per_img_dets(result_matrix, gt_bboxes, labels, res_bboxes,score_thr, tp_iou_thr)
+        analyze_per_img_dets(result_matrix, gt_bboxes, labels, res_bboxes,
+                             score_thr, tp_iou_thr)
         prog_bar.update()
     return result_matrix
 
-def analyze_per_img_dets(result_matrix,
-                         gt_bboxes,
-                         gt_labels,
-                         result,
-                         score_thr=0.3,
-                         tp_iou_thr=0.5,):
+
+def analyze_per_img_dets(
+    result_matrix,
+    gt_bboxes,
+    gt_labels,
+    result,
+    score_thr=0.3,
+    tp_iou_thr=0.5,
+):
     for det_label, det_bboxes in enumerate(result):
         ious = bbox_overlaps(det_bboxes[:, :4], gt_bboxes)
         for i, det_bbox in enumerate(det_bboxes):
@@ -45,26 +51,27 @@ def analyze_per_img_dets(result_matrix,
             if score >= score_thr:
                 for j, gt_label in enumerate(gt_labels):
                     if ious[i, j] >= tp_iou_thr and gt_label == det_label:
-                        det_point_y = det_bbox[1] + ((det_bbox[3] - det_bbox[1]) / 2)
+                        det_point_y = det_bbox[1] + (
+                            (det_bbox[3] - det_bbox[1]) / 2)
                         det_point_x = det_bbox[2]
 
-                        gt_point_y = gt_bboxes[j][1] + ((gt_bboxes[j][3] - gt_bboxes[j][1]) / 2)
+                        gt_point_y = gt_bboxes[j][1] + (
+                            (gt_bboxes[j][3] - gt_bboxes[j][1]) / 2)
                         gt_point_x = gt_bboxes[j][2]
 
-                        point_val_result = math.sqrt(
-                            ((gt_point_x - det_point_x) ** 2) + ((gt_point_y - det_point_y) ** 2))
+                        point_val_result = math.sqrt((
+                            (gt_point_x - det_point_x)**2) + (
+                                (gt_point_y - det_point_y)**2))
                         line_val_result = gt_bboxes[j][2] - det_bbox[2]
 
                         result_matrix[gt_label, 0] += abs(point_val_result)
                         result_matrix[gt_label, 1] += abs(line_val_result)
 
 
-
-
 def main():
-    prediction_path = "/home/chenzhen/code/detection/mmdetection/result/jichu_result.pkl"
-    # prediction_path = "/home/chenzhen/dt_mmdetection/tools/2399_40_results.pkl"
-    config = "/home/chenzhen/code/detection/mmdetection/configs/datang_detection/yolox_s_8x8_300e_coco.py"
+    prediction_path = '/home/chenzhen/code/detection/mmdetection/result/jichu_result.pkl'  # noqa E501
+    # prediction_path = "/home/chenzhen/dt_mmdetection/tools/2399_40_results.pkl" # noqa E501
+    config = '/home/chenzhen/code/detection/mmdetection/configs/datang_detection/yolox_s_8x8_300e_coco.py'  # noqa E501
     cfg = Config.fromfile(config)
     cfg = replace_cfg_vals(cfg)
     update_data_root(cfg)
@@ -82,12 +89,11 @@ def main():
         for ds_cfg in cfg.data.test:
             ds_cfg.test_mode = True
     dataset = build_dataset(cfg.data.test)
-    confusion_matrix = calculate_confusion_matrix(dataset, results,
-                                                  score_thr=0.3,
-                                                  tp_iou_thr=0.75)
+    confusion_matrix = calculate_confusion_matrix(
+        dataset, results, score_thr=0.3, tp_iou_thr=0.75)
     np.set_printoptions(precision=4, suppress=True)
-    print(list(confusion_matrix[:,0]))
-    print(list(confusion_matrix[:,1]))
+    print(list(confusion_matrix[:, 0]))
+    print(list(confusion_matrix[:, 1]))
 
 
 if __name__ == '__main__':

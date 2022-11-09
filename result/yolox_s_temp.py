@@ -187,7 +187,7 @@ data = dict(
         classes=('Car', 'Bus', 'Cyclist', 'Pedestrian', 'driverless_car',
                  'Truck', 'Tricyclist', 'Trafficcone'),
         ann_file=
-        '/home/chenzhen/code/detection/datasets/coco100/annotations/val.json',
+        '/home/chenzhen/code/detection/datasets/coco100/annotations/val.json',  # noqa E501
         img_prefix='/home/chenzhen/code/detection/datasets/coco100/train/',
         pipeline=[
             dict(type='LoadImageFromFile'),
