@@ -23,7 +23,7 @@ model = dict(
     test_cfg=dict(score_thr=0.01, nms=dict(type='nms', iou_threshold=0.65)))
 
 # dataset settings
-data_root = '/home/chenzhen/code/detection/datasets/coco100/'
+data_root = 'data/coco_dt/'
 dataset_type = 'CocoDataset'
 
 train_pipeline = [
