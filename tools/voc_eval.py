@@ -1,12 +1,11 @@
 from argparse import ArgumentParser
 
 import mmcv
-from mmeval import AveragePrecision
 
 from mmdet import datasets
 from mmdet.core import eval_map
 
-average_precision = AveragePrecision()
+
 '''
 command:
 python tools/voc_eval.py results.pkl  work_dirs/faster_rcnn_r50_fpn_1x_coco.py # noqa E501

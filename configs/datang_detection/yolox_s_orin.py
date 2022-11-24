@@ -1,6 +1,6 @@
 _base_ = ['../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py']
 
-img_scale = (640, 640)  # height, width
+img_scale = (800, 800)  # height, width
 CLASSES = ('Car', 'Bus', 'Cyclist', 'Pedestrian', 'driverless_car', 'Truck',
            'Tricyclist', 'Trafficcone')
 ignore_and_occs = True
@@ -104,7 +104,8 @@ test_pipeline = [
             dict(type='RandomFlip'),
             dict(
                 type='Pad',
-                pad_to_square=True,
+                size=img_scale,  # no minipad
+                pad_to_square=False,
                 pad_val=dict(img=(114.0, 114.0, 114.0))),
             dict(type='DefaultFormatBundle'),
             dict(type='Collect', keys=['img']),

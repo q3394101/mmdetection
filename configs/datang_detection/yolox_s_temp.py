@@ -61,8 +61,8 @@ model = dict(
 
 # dataset settings
 # data_root = '/home/chenzhen/code/detection/datasets/coco100/'  # noqa E501
-data_root = '/home/chenzhen/code/detection/datasets/dt_imgdata/coco_val'
-dataset_type = 'CocoDataset'
+data_root = './data/coco_dt/'
+dataset_type = 'CocoDataset_datang'
 
 train_pipeline = [
     #################### TODO:ratio  v1.1-3 # noqa E266
