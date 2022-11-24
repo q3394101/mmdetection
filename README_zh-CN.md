@@ -76,10 +76,9 @@ MMDetection 是一个基于 PyTorch 的目标检测开源工具箱。它是 [Ope
 
 ### 💎 稳定版本
 
-最新的 **2.25.2** 版本已经在 2022.09.15 发布:
+最新的 **2.26.0** 版本已经在 2022.11.23 发布:
 
-- 修复 Dynamic Head 和 Swin Transformer 中的错误。
-- 优化注释和文档。
+- 支持在 [NPU](docs/en/device/npu.md) 上进行训练。
 
 如果想了解更多版本更新细节和历史信息，请阅读[更新日志](docs/en/changelog.md)。
 
@@ -348,6 +347,7 @@ MMDetection 是一款由来自不同高校和企业的研发人员共同参与�
 
 - [MMEngine](https://github.com/open-mmlab/mmengine): OpenMMLab 深度学习模型训练基础库
 - [MMCV](https://github.com/open-mmlab/mmcv): OpenMMLab 计算机视觉基础库
+- [MMEval](https://github.com/open-mmlab/mmeval): 统一开放的跨框架算法评测库
 - [MIM](https://github.com/open-mmlab/mim): MIM 是 OpenMMlab 项目、算法、模型的统一入口
 - [MMClassification](https://github.com/open-mmlab/mmclassification): OpenMMLab 图像分类工具箱
 - [MMDetection](https://github.com/open-mmlab/mmdetection): OpenMMLab 目标检测工具箱

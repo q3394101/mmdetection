@@ -77,10 +77,9 @@ Apart from MMDetection, we also released a library [mmcv](https://github.com/ope
 
 ### 💎 Stable version
 
-**2.25.2** was released in 15/9/2022:
+**2.26.0** was released in 23/11/2022:
 
-- Fix bugs in Dynamic Head and Swin Transformer.
-- Refine docstring and documentation.
+- Support training on [NPU](docs/en/device/npu.md).
 
 Please refer to [changelog.md](docs/en/changelog.md) for details and release history.
 
@@ -350,6 +349,7 @@ This project is released under the [Apache 2.0 license](LICENSE).
 
 - [MMEngine](https://github.com/open-mmlab/mmengine): OpenMMLab foundational library for training deep learning models.
 - [MMCV](https://github.com/open-mmlab/mmcv): OpenMMLab foundational library for computer vision.
+- [MMEval](https://github.com/open-mmlab/mmeval): A unified evaluation library for multiple machine learning libraries.
 - [MIM](https://github.com/open-mmlab/mim): MIM installs OpenMMLab packages.
 - [MMClassification](https://github.com/open-mmlab/mmclassification): OpenMMLab image classification toolbox and benchmark.
 - [MMDetection](https://github.com/open-mmlab/mmdetection): OpenMMLab detection toolbox and benchmark.
