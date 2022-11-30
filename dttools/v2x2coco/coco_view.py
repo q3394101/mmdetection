@@ -36,7 +36,6 @@ def showBBox(coco, anns, label_box=True, is_filling=True):
         np_poly = np.array(poly).reshape((4, 2))
         polygons.append(Polygon(np_poly))
         color.append(c)
-        occ = ann.get('occ', 0)
         if label_box:
             label_bbox = dict(facecolor=c)
         else:
