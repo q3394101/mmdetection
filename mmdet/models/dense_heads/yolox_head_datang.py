@@ -555,8 +555,8 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         occs_weight_map = torch.ones_like(objectness).float()
         direct_weight_map = torch.ones_like(objectness).float()
         if num_igs != 0:
-            with_ignore = self.train_cfg.get('with_ignore', False) # v1.1-6
-            with_occ = self.train_cfg.get('with_occ', False) # v1.1-6
+            with_ignore = self.train_cfg.get('with_ignore', False)  # v1.1-6
+            with_occ = self.train_cfg.get('with_occ', False)  # v1.1-6
             with_direct = self.train_cfg.get('with_direct', False)  # v1.1-6
             if with_ignore:
                 gt_bboxes_ignore = gt_bboxes_ignore.to(
@@ -568,7 +568,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
                     decoded_bboxes.dtype)  # v1.1-6
             else:
                 gt_bboxes_occs = decoded_bboxes.new_empty(0, )  # v1.1-6
-                gt_bboxes_occs = decoded_bboxes.new_empty(0, ) # v1.1-6
+                gt_bboxes_occs = decoded_bboxes.new_empty(0, )  # v1.1-6
 
             if with_direct:
                 gt_bboxes_direct = gt_bboxes_direct.to(decoded_bboxes.dtype)
