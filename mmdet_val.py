@@ -10,6 +10,7 @@ from mmdet import datasets
 import torch.nn as nn
 from mmdet.core.evaluation.bbox_overlaps import bbox_overlaps
 from mmdet.core.evaluation.bbox_area import bbox_area
+from mmdet.core.evaluation.class_names import get_classes
 from mmdet.datasets import build_dataset
 from mmdet.utils import replace_cfg_vals, update_data_root
 pair = nn.PairwiseDistance(p=2)
@@ -55,7 +56,7 @@ def calculate_dis_confusion_matrix(dataset,
         ann = dataset.get_ann_info(idx)
         gt_bboxes = ann['bboxes']
         labels = ann['labels']
-        dis_analyze_per_img_dets(result_matrix, gt_bboxes, labels, res_bboxes,score_thr, tp_iou_thr)
+        dis_analyze_per_img_dets(result_matrix, gt_bboxes, labels, res_bboxes, score_thr, tp_iou_thr)
         prog_bar.update()
     return result_matrix
 
@@ -168,6 +169,7 @@ def main():
         for ds_cfg in cfg.data.test:
             ds_cfg.test_mode = True
     dataset = build_dataset(cfg.data.test)
+    dataset_name = list(dataset.CLASSES)
     print('\n----------------datasets-------------------\n')
     print(dataset)
     #1 cal tp fp
@@ -181,10 +183,14 @@ def main():
     fp = TP_confusion_matrix.sum(0) - tp  # false positives
     fn = TP_confusion_matrix[:, -1]  # false negatives (missed detections)
     print('\n----------------cal_tp_fp_fn-------------------\n')
-    print('\ntp', tp[:-1],
-          '\nfp', fp[:-1],
-          '\nfn', fn[:-1],
-          )
+
+    # print('\ntp', tp,
+    #       '\nfp', fp,
+    #       '\nfn', fn,
+    #       )
+
+    for i in range(len(dataset_name)):
+        print('{}: tp:{}     |     fp:{}     |     fn:{}'.format(dataset_name[i], tp[i], fp[i], fn[i]))
     #2 cal dis loss
     DIS_confusion_matrix = calculate_dis_confusion_matrix(dataset, results,
                                                   score_thr=score_thr,
@@ -192,15 +198,17 @@ def main():
     np.set_printoptions(precision=4, suppress=True)
 
     print('\n-------------cal_point_line----------------------\n')
+    point_result_normal = list(map(lambda x: x[0]/(x[1]+exp), zip(list(DIS_confusion_matrix[:, 0]), tp)))
+    line_result_normal = list(map(lambda x: x[0]/(x[1]+exp), zip(list(DIS_confusion_matrix[:, 1]), tp)))
 
-    point_result_normal = list(map(lambda x: x[0]/x[1]+exp, zip(list(DIS_confusion_matrix[:, 0]), tp)))
-    line_result_normal = list(map(lambda x: x[0]/x[1]+exp, zip(list(DIS_confusion_matrix[:, 1]), tp)))
+    print('\n-------------point_result_normal----------------------\n')
+    for i in range(len(dataset_name)):
+        print('{} : {}'.format(dataset_name[i], point_result_normal[i]))
+    print('\n-------------line_result_normal----------------------\n')
+    for i in range(len(dataset_name)):
+        print('{} : {}'.format(dataset_name[i], line_result_normal[i]))
 
-    print("point_result_normal:", point_result_normal)
-    print("line_result_normal:", line_result_normal)
     print('\n------------cal_val-----------------------\n')
-
-
     #3.map
     voc_eval(results, dataset, tp_iou_thr, 4)
 
