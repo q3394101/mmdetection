@@ -668,7 +668,8 @@ class FilterAnnotations:
 
         keep = keep.nonzero()[0]
         #  v1.1-1
-        keys = ('gt_bboxes', 'gt_labels', 'gt_masks', 'gt_occs')  # v1.1-6
+        keys = ('gt_bboxes', 'gt_labels', 'gt_masks', 'gt_occs', 'gt_direct'
+                )  # v1.1-6
         for key in keys:
             if key in results:
                 results[key] = results[key][keep]
