@@ -1,8 +1,12 @@
 _base_ = ['../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py']
 
 img_scale = (800, 800)  # height, width
-CLASSES = ('Car', 'Bus', 'Cyclist', 'Pedestrian', 'driverless_car', 'Truck',
-           'Tricyclist', 'Trafficcone')
+# CLASSES = ('Car', 'Bus', 'Cyclist', 'Pedestrian', 'driverless_car', 'Truck',
+#            'Tricyclist', 'Trafficcone')
+
+CLASSES = ('Car', 'Bus', 'Cycling', 'Pedestrian', 'driverless_Car', 'Truck',
+           'Animal', 'Obstacle', 'Special_Target', 'Other_Objects',
+           'Unmanned_riding')
 ignore_and_occs = True
 # model settings
 model = dict(

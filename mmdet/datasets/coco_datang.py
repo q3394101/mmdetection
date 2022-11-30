@@ -22,8 +22,9 @@ from .custom import CustomDataset
 @DATASETS.register_module()
 class CocoDataset_datang(CustomDataset):
 
-    CLASSES = ('Car', 'Bus', 'Cyclist', 'Pedestrian', 'driverless_car',
-               'Truck', 'Tricyclist', 'Trafficcone')
+    CLASSES = ('Car', 'Bus', 'Cycling', 'Pedestrian', 'driverless_Car', 'Truck',
+               'Animal', 'Obstacle', 'Special_Target', 'Other_Objects',
+               'Unmanned_riding')
 
     PALETTE = [(220, 20, 60), (119, 11, 32), (0, 0, 142), (0, 0, 230),
                (106, 0, 228), (0, 60, 100), (0, 80, 100), (0, 0, 70),
@@ -149,9 +150,9 @@ class CocoDataset_datang(CustomDataset):
         gt_occs = []  # v1.1-1
         gt_direct = []
         occ_ignore_thre = [
-            80, 80, 80, 80, 80, 80, 80, 80
+            80, 80, 80, 80, 80, 80, 80, 80,80,80,80
         ]  # v1.1-1 and v1.1-2 set occ ignore threshold # noqa E501
-        direct_ignore_thre = [80, 80, 80, 80, 80, 80, 80, 80]
+        direct_ignore_thre = [80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80]
         # occ_ignore_thre = [10, 10, 10, 10, 10, 10, 10, 10]
         for i, ann in enumerate(ann_info):
             if ann.get('ignore', False):
