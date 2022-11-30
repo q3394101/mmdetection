@@ -1,8 +1,9 @@
 DEBUG = True
 batch_size = 2
 img_scale = (640, 640)
-CLASSES = ('Car', 'Bus', 'Cyclist', 'Pedestrian', 'driverless_car', 'Truck',
-           'Tricyclist', 'Trafficcone')
+CLASSES = ('Car', 'Bus', 'Cycling', 'Pedestrian', 'driverless_Car', 'Truck',
+           'Animal', 'Obstacle', 'Special_Target', 'Other_Objects',
+           'Unmanned_riding')
 model = dict(
     type='YOLOX',
     input_size=(640, 640),
@@ -59,11 +60,9 @@ train_dataset = dict(
     type='MultiImageMixDataset',
     dataset=dict(
         type='CocoDataset_datang',
-        classes=('Car', 'Bus', 'Cyclist', 'Pedestrian', 'driverless_car',
-                 'Truck', 'Tricyclist', 'Trafficcone'),
-        ann_file=
-        '/home/chenzhen/code/detection/datasets/coco100/annotations/train.json',
-        img_prefix='/home/chenzhen/code/detection/datasets/coco100/train/',
+        classes=CLASSES,
+        ann_file=data_root + 'annotations/train.json',
+        img_prefix=data_root + 'train/',
         pipeline=[
             dict(type='LoadImageFromFile'),
             dict(type='LoadAnnotations', with_bbox=True, with_occ=True)
@@ -120,11 +119,9 @@ data = dict(
         type='MultiImageMixDataset',
         dataset=dict(
             type='CocoDataset_datang',
-            classes=('Car', 'Bus', 'Cyclist', 'Pedestrian', 'driverless_car',
-                     'Truck', 'Tricyclist', 'Trafficcone'),
-            ann_file=
-            '/home/chenzhen/code/detection/datasets/coco100/annotations/train.json',
-            img_prefix='/home/chenzhen/code/detection/datasets/coco100/train/',
+            classes=CLASSES,
+            ann_file=data_root + 'annotations/train.json',
+            img_prefix=data_root + 'train/',
             pipeline=[
                 dict(type='LoadImageFromFile'),
                 dict(type='LoadAnnotations', with_bbox=True, with_occ=True)
@@ -162,9 +159,8 @@ data = dict(
         type='CocoDataset_datang',
         classes=('Car', 'Bus', 'Cyclist', 'Pedestrian', 'driverless_car',
                  'Truck', 'Tricyclist', 'Trafficcone'),
-        ann_file=
-        '/home/chenzhen/code/detection/datasets/coco100/annotations/val.json',
-        img_prefix='/home/chenzhen/code/detection/datasets/coco100/train/',
+        ann_file=data_root + 'annotations/val.json',
+        img_prefix=data_root + 'train/',
         pipeline=[
             dict(type='LoadImageFromFile'),
             dict(
@@ -184,11 +180,9 @@ data = dict(
         ]),
     test=dict(
         type='CocoDataset_datang',
-        classes=('Car', 'Bus', 'Cyclist', 'Pedestrian', 'driverless_car',
-                 'Truck', 'Tricyclist', 'Trafficcone'),
-        ann_file=
-        '/home/chenzhen/code/detection/datasets/coco100/annotations/val.json',  # noqa E501
-        img_prefix='/home/chenzhen/code/detection/datasets/coco100/train/',
+        classes=CLASSES,
+        ann_file=data_root + 'annotations/val.json',  # noqa E501
+        img_prefix=data_root + 'train/',
         pipeline=[
             dict(type='LoadImageFromFile'),
             dict(

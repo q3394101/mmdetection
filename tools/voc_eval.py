@@ -6,13 +6,6 @@ from mmdet import datasets
 from mmdet.core import eval_map
 
 
-'''
-command:
-python tools/voc_eval.py results.pkl  work_dirs/faster_rcnn_r50_fpn_1x_coco.py # noqa E501
-
-'''
-
-
 def voc_eval(result_file, dataset, iou_thr=0.5, nproc=4):
     det_results = mmcv.load(result_file)
     annotations = [dataset.get_ann_info(i) for i in range(len(dataset))]
@@ -51,4 +44,7 @@ def main():
 
 
 if __name__ == '__main__':
+    '''command:
+    python tools/voc_eval.py results.pkl  work_dirs/faster_rcnn_r50_fpn_1x_coco.py # noqa E501
+    '''
     main()

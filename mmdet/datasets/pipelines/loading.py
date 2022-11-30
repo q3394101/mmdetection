@@ -247,7 +247,7 @@ class LoadAnnotations:
         self.file_client_args = file_client_args.copy()
         self.file_client = None
 
-    def _load_occlusion(self, results): # v1.1-6
+    def _load_occlusion(self, results):  # v1.1-6
         """Private function to load occlusion annotations. v1.1-1
         Args:
             results (dict): Result dict from :obj:`mmdet.CustomDataset`.
@@ -262,7 +262,7 @@ class LoadAnnotations:
                                           ], dtype=np.float32)).copy()
         return results
 
-    def _load_direction(self, results): # v1.1-6
+    def _load_direction(self, results):  # v1.1-6
         """Private function to load occlusion annotations. v1.1-1
         Args:
             results (dict): Result dict from :obj:`mmdet.CustomDataset`.
@@ -273,8 +273,8 @@ class LoadAnnotations:
         ann_info = results['ann_info']
         results['gt_direct'] = ann_info.get('direct',
                                             np.empty([
-                                              0,
-                                          ], dtype=np.float32)).copy()
+                                                0,
+                                            ], dtype=np.float32)).copy()
         return results
 
     def _load_bboxes(self, results):
@@ -433,7 +433,7 @@ class LoadAnnotations:
             results = self._load_masks(results)
         if self.with_seg:
             results = self._load_semantic_seg(results)
-        if self.with_occ: # v1.1-6
+        if self.with_occ:  # v1.1-6
             results = self._load_occlusion(results)
         if self.with_direct:  # v1.1-6
             results = self._load_direction(results)

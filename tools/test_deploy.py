@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import tensorrt as trt
 import argparse
 
+import tensorrt as trt  # noqa F401
 from mmcv import DictAction
 from mmcv.parallel import MMDataParallel
 

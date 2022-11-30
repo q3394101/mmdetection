@@ -2119,8 +2119,7 @@ class Mosaic:
             if self.with_ignore_and_occs:
                 gt_other_info_i = [
                     results_patch['gt_bboxes_ignore'],
-                    results_patch['gt_occs'],
-                    results_patch['gt_direct']
+                    results_patch['gt_occs'], results_patch['gt_direct']
                 ]
 
             if gt_bboxes_i.shape[0] > 0:
@@ -2141,9 +2140,12 @@ class Mosaic:
             mosaic_labels = np.concatenate(mosaic_labels, 0)
 
             if self.with_ignore_and_occs:
-                mosaic_ignores = np.concatenate([i[0] for i in mosaic_other_info], 0)
-                mosaic_occs = np.concatenate([i[1] for i in mosaic_other_info], 0)
-                mosaic_direct = np.concatenate([i[2] for i in mosaic_other_info], 0)
+                mosaic_ignores = np.concatenate(
+                    [i[0] for i in mosaic_other_info], 0)
+                mosaic_occs = np.concatenate([i[1] for i in mosaic_other_info],
+                                             0)
+                mosaic_direct = np.concatenate(
+                    [i[2] for i in mosaic_other_info], 0)
 
             else:
                 mosaic_ignores = None
@@ -2171,7 +2173,6 @@ class Mosaic:
         if self.with_ignore_and_occs:
             mosaic_occs = mosaic_occs[inside_inds]
             mosaic_direct = mosaic_direct[inside_inds]
-
 
         results['img'] = mosaic_img
         results['img_shape'] = mosaic_img.shape
