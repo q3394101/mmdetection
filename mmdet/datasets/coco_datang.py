@@ -149,9 +149,11 @@ class CocoDataset_datang(CustomDataset):
         gt_masks_ann = []
         gt_occs = []  # v1.1-1
         gt_direct = []
-        occ_ignore_thre = [
-            80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80
-        ]  # v1.1-1 and v1.1-2 set occ ignore threshold # noqa E501
+
+        # v1.1-1 and v1.1-2 set occ ignore threshold # noqa E501
+        # occ_ignore_thre = [80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80]
+        occ_ignore_thre = [5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+
         direct_ignore_thre = [80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80]
         # occ_ignore_thre = [10, 10, 10, 10, 10, 10, 10, 10]
         for i, ann in enumerate(ann_info):
@@ -181,7 +183,6 @@ class CocoDataset_datang(CustomDataset):
                 gt_labels.append(self.cat2label[ann['category_id']])
                 gt_masks_ann.append(ann.get('segmentation', None))
                 # gt_occs.append(ann.get('occ', 10))  # debug v1.1-1
-                gt_occs.append(ann.get('occlude', 0))  # use v1.1-1, default:0
                 gt_occs.append(ann.get('occ', 0))  # use v1.1-1, default:0
                 gt_direct.append(ann.get('direct', 0))  # use v1.1-1, default:0
 

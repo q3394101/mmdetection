@@ -2005,18 +2005,22 @@ class Mosaic:
             Default to 1.0.
     """
 
-    def __init__(self,
-                 img_scale=(640, 640),
-                 center_ratio_range=(0.5, 1.5),
-                 min_bbox_size=0,
-                 bbox_clip_border=True,
-                 skip_filter=True,
-                 pad_val=114,
-                 prob=1.0,
-                 with_ignore_and_occs=False):
+    def __init__(
+        self,
+        img_scale=(640, 640),
+        center_ratio_range=(0.5, 1.5),
+        min_bbox_size=0,
+        bbox_clip_border=True,
+        skip_filter=True,
+        pad_val=114,
+        prob=1.0,
+        with_ignore=False,
+        with_occ=False,
+        with_direct=False,
+    ):
         assert isinstance(img_scale, tuple)
-        assert 0 <= prob <= 1.0, 'The probability should be in range [0,1]. '\
-            f'got {prob}.'
+        assert 0 <= prob <= 1.0, 'The probability should be in range [0,1]. ' \
+                                 f'got {prob}.'
 
         log_img_scale(img_scale, skip_square=True)
         self.img_scale = img_scale
@@ -2026,7 +2030,9 @@ class Mosaic:
         self.skip_filter = skip_filter
         self.pad_val = pad_val
         self.prob = prob
-        self.with_ignore_and_occs = with_ignore_and_occs
+        self.with_ignore = with_ignore
+        self.with_occ = with_occ
+        self.with_direct = with_direct
 
     def __call__(self, results):
         """Call function to make a mosaic of image.
@@ -2070,7 +2076,13 @@ class Mosaic:
         assert 'mix_results' in results
         mosaic_labels = []
         mosaic_bboxes = []
-        mosaic_other_info = [] if self.with_ignore_and_occs else None
+        if self.with_ignore:
+            mosaic_ignores = []
+        if self.with_occ:
+            mosaic_occs = []
+        if self.with_direct:
+            mosaic_direct = []
+
         if len(results['img'].shape) == 3:
             mosaic_img = np.full(
                 (int(self.img_scale[0] * 2), int(self.img_scale[1] * 2), 3),
@@ -2116,11 +2128,13 @@ class Mosaic:
             # adjust coordinate
             gt_bboxes_i = results_patch['gt_bboxes']
             gt_labels_i = results_patch['gt_labels']
-            if self.with_ignore_and_occs:
-                gt_other_info_i = [
-                    results_patch['gt_bboxes_ignore'],
-                    results_patch['gt_occs'], results_patch['gt_direct']
-                ]
+
+            if self.with_ignore:
+                mosaic_ignores_i = results_patch['gt_bboxes_ignore']
+            if self.with_occ:
+                mosaic_occs_i = results_patch['gt_occs']
+            if self.with_direct:
+                mosaic_direct_i = results_patch['gt_direct']
 
             if gt_bboxes_i.shape[0] > 0:
                 padw = x1_p - x1_c
@@ -2130,27 +2144,32 @@ class Mosaic:
                 gt_bboxes_i[:, 1::2] = \
                     scale_ratio_i * gt_bboxes_i[:, 1::2] + padh
 
+                if self.with_ignore and mosaic_ignores_i.shape[0]:
+                    mosaic_ignores_i[:, 0::2] \
+                        = scale_ratio_i * mosaic_ignores_i[:,0::2] + padw # noqa E231
+                    mosaic_ignores_i[:, 1::2] \
+                        = scale_ratio_i * mosaic_ignores_i[:,1::2] + padh # noqa E231
+
             mosaic_bboxes.append(gt_bboxes_i)
             mosaic_labels.append(gt_labels_i)
-            if self.with_ignore_and_occs:
-                mosaic_other_info.append(gt_other_info_i)
+
+            if self.with_ignore:
+                mosaic_ignores.append(mosaic_ignores_i)
+            if self.with_occ:
+                mosaic_occs.append(mosaic_occs_i)
+            if self.with_direct:
+                mosaic_direct.append(mosaic_direct_i)
 
         if len(mosaic_labels) > 0:
             mosaic_bboxes = np.concatenate(mosaic_bboxes, 0)
             mosaic_labels = np.concatenate(mosaic_labels, 0)
 
-            if self.with_ignore_and_occs:
-                mosaic_ignores = np.concatenate(
-                    [i[0] for i in mosaic_other_info], 0)
-                mosaic_occs = np.concatenate([i[1] for i in mosaic_other_info],
-                                             0)
-                mosaic_direct = np.concatenate(
-                    [i[2] for i in mosaic_other_info], 0)
-
-            else:
-                mosaic_ignores = None
-                mosaic_occs = None
-                mosaic_direct = None
+            if self.with_ignore:
+                mosaic_ignores = np.concatenate(mosaic_ignores)
+            if self.with_occ:
+                mosaic_occs = np.concatenate(mosaic_occs, 0)
+            if self.with_direct:
+                mosaic_direct = np.concatenate(mosaic_direct, 0)
 
             if self.bbox_clip_border:
                 mosaic_bboxes[:, 0::2] = np.clip(mosaic_bboxes[:, 0::2], 0,
@@ -2158,30 +2177,57 @@ class Mosaic:
                 mosaic_bboxes[:, 1::2] = np.clip(mosaic_bboxes[:, 1::2], 0,
                                                  2 * self.img_scale[0])
 
+                if self.with_ignore and mosaic_ignores.shape[0]:
+                    mosaic_ignores[:, 0::2] = np.clip(mosaic_ignores[:, 0::2],
+                                                      0, 2 * self.img_scale[1])
+                    mosaic_ignores[:, 1::2] = np.clip(mosaic_ignores[:, 1::2],
+                                                      0, 2 * self.img_scale[0])
+
             if not self.skip_filter:
-                mosaic_bboxes, mosaic_labels, mosaic_occs, mosaic_direct = \
-                    self._filter_box_candidates(mosaic_bboxes,
-                                                mosaic_labels,
-                                                mosaic_occs,
-                                                mosaic_direct)
+                if self.with_ignore and mosaic_ignores.shape[0]:
+                    bbox_inds, ignore_inds = \
+                        self._filter_box_candidates_ignore_return_inds(
+                            mosaic_bboxes, mosaic_ignores)
+                    mosaic_ignores = mosaic_ignores[ignore_inds]
+                else:
+                    bbox_inds = self._filter_box_candidates_return_inds(
+                        mosaic_bboxes)
+
+                mosaic_bboxes = mosaic_bboxes[bbox_inds]
+                mosaic_labels = mosaic_labels[bbox_inds]
+
+                if self.with_occ:
+                    mosaic_occs = mosaic_occs[bbox_inds]
+                if self.with_direct:
+                    mosaic_direct = mosaic_direct[bbox_inds]
 
         # remove outside bboxes
         inside_inds = find_inside_bboxes(mosaic_bboxes, 2 * self.img_scale[0],
                                          2 * self.img_scale[1])
         mosaic_bboxes = mosaic_bboxes[inside_inds]
         mosaic_labels = mosaic_labels[inside_inds]
-        if self.with_ignore_and_occs:
+
+        if self.with_occ:
             mosaic_occs = mosaic_occs[inside_inds]
+        if self.with_direct:
             mosaic_direct = mosaic_direct[inside_inds]
+
+        if self.with_ignore and mosaic_ignores.shape[0]:
+            inside_inds = find_inside_bboxes(mosaic_ignores,
+                                             2 * self.img_scale[0],
+                                             2 * self.img_scale[1])
+            mosaic_ignores = mosaic_ignores[inside_inds]
 
         results['img'] = mosaic_img
         results['img_shape'] = mosaic_img.shape
         results['gt_bboxes'] = mosaic_bboxes
         results['gt_labels'] = mosaic_labels
 
-        if self.with_ignore_and_occs:
+        if self.with_ignore:
             results['gt_bboxes_ignore'] = mosaic_ignores
+        if self.with_occ:
             results['gt_occs'] = mosaic_occs
+        if self.with_direct:
             results['gt_direct'] = mosaic_direct
 
         return results
@@ -2247,24 +2293,38 @@ class Mosaic:
         paste_coord = x1, y1, x2, y2
         return paste_coord, crop_coord
 
-    def _filter_box_candidates(self,
-                               bboxes,
-                               labels,
-                               mosaic_occs=None,
-                               mosaic_direct=None):
+    def _filter_box_candidates(self, bboxes, labels):
         """Filter out bboxes too small after Mosaic."""
-        flag = (mosaic_occs or mosaic_direct) is not None
         bbox_w = bboxes[:, 2] - bboxes[:, 0]
         bbox_h = bboxes[:, 3] - bboxes[:, 1]
         valid_inds = (bbox_w > self.min_bbox_size) & \
                      (bbox_h > self.min_bbox_size)
         valid_inds = np.nonzero(valid_inds)[0]
-        if flag:
-            occs = mosaic_occs[valid_inds]
-            direct = mosaic_direct[valid_inds]
-        return bboxes[valid_inds], labels[
-            valid_inds], mosaic_occs if not flag else bboxes[
-                valid_inds], labels[valid_inds], occs, direct
+        return bboxes[valid_inds], labels[valid_inds]
+
+    def _filter_box_candidates_return_inds(self, bboxes):
+        """Filter out bboxes too small after Mosaic."""
+        bbox_w = bboxes[:, 2] - bboxes[:, 0]
+        bbox_h = bboxes[:, 3] - bboxes[:, 1]
+        valid_inds = (bbox_w > self.min_bbox_size) & \
+                     (bbox_h > self.min_bbox_size)
+        valid_inds = np.nonzero(valid_inds)[0]
+        return valid_inds
+
+    def _filter_box_candidates_ignore_return_inds(self, bboxes, ignore_bboxes):
+        """Filter out bboxes too small after Mosaic."""
+        bbox_w = bboxes[:, 2] - bboxes[:, 0]
+        bbox_h = bboxes[:, 3] - bboxes[:, 1]
+        valid_inds = (bbox_w > self.min_bbox_size) & \
+                     (bbox_h > self.min_bbox_size)
+        valid_inds = np.nonzero(valid_inds)[0]
+        valid_ignore_inds = None
+        if ignore_bboxes.shape[0]:
+            ignore_w = ignore_bboxes[:, 2] - ignore_bboxes[:, 0]
+            ignore_h = ignore_bboxes[:, 3] - ignore_bboxes[:, 1]
+            valid_ignore_inds = (ignore_w > self.min_bbox_size) & (
+                ignore_h > self.min_bbox_size)
+        return valid_inds, valid_ignore_inds
 
     def __repr__(self):
         repr_str = self.__class__.__name__
@@ -2580,18 +2640,22 @@ class RandomAffine:
             is invalid. Default to True.
     """
 
-    def __init__(self,
-                 max_rotate_degree=10.0,
-                 max_translate_ratio=0.1,
-                 scaling_ratio_range=(0.5, 1.5),
-                 max_shear_degree=2.0,
-                 border=(0, 0),
-                 border_val=(114, 114, 114),
-                 min_bbox_size=2,
-                 min_area_ratio=0.2,
-                 max_aspect_ratio=20,
-                 bbox_clip_border=True,
-                 skip_filter=True):
+    def __init__(
+        self,
+        max_rotate_degree=10.0,
+        max_translate_ratio=0.1,
+        scaling_ratio_range=(0.5, 1.5),
+        max_shear_degree=2.0,
+        border=(0, 0),
+        border_val=(114, 114, 114),
+        min_bbox_size=2,
+        min_area_ratio=0.2,
+        max_aspect_ratio=20,
+        bbox_clip_border=True,
+        skip_filter=True,
+        with_occ=False,
+        with_direct=False,
+    ):
         assert 0 <= max_translate_ratio <= 1
         assert scaling_ratio_range[0] <= scaling_ratio_range[1]
         assert scaling_ratio_range[0] > 0
@@ -2606,6 +2670,8 @@ class RandomAffine:
         self.max_aspect_ratio = max_aspect_ratio
         self.bbox_clip_border = bbox_clip_border
         self.skip_filter = skip_filter
+        self.with_occ = with_occ
+        self.with_direct = with_direct
 
     def __call__(self, results):
         img = results['img']
@@ -2683,6 +2749,11 @@ class RandomAffine:
                 if key in ['gt_bboxes']:
                     if 'gt_labels' in results:
                         results['gt_labels'] = results['gt_labels'][
+                            valid_index]
+                    if self.with_occ and 'gt_occs' in results:
+                        results['gt_occs'] = results['gt_occs'][valid_index]
+                    if self.with_direct and 'gt_direct' in results:
+                        results['gt_direct'] = results['gt_direct'][
                             valid_index]
 
                 if 'gt_masks' in results:

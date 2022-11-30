@@ -16,8 +16,19 @@ if os.environ.get('DEBUG', False):
     DEBUG = True
 batch_size = 2
 img_scale = (640, 640)  # height, width
-CLASSES = ('Car', 'Bus', 'Cyclist', 'Pedestrian', 'driverless_car', 'Truck',
-           'Tricyclist', 'Trafficcone')
+CLASSES = ('Car', 'Bus', 'Cycling', 'Pedestrian', 'driverless_Car', 'Truck',
+           'Animal', 'Obstacle', 'Special_Target', 'Other_Objects',
+           'Unmanned_riding')
+
+with_ignore = False
+with_occ = True
+with_direct = True
+skip_filter = False
+
+img_norm_cfg = dict(
+    mean=[0, 0, 0],
+    std=[1, 1, 1],
+)
 
 # model settings
 model = dict(
@@ -44,10 +55,10 @@ model = dict(
         'Linear',  # v1.1-1  current types: 'None','Linear',etc.
         occ_reg_weight_type=  # noqa E251
         'Linear',  # v1.1-1  current types: 'None','Linear',etc.
-        with_ignore=True,  # v1.1-2
+        with_ignore=with_ignore,  # v1.1-2
         bound_weight=[1.0, 2.0, 1.0, 1.0],  # up low left right v1.1-5
-        with_occ=True,  # v1.1-6 linsong
-        with_direct=True,
+        with_occ=with_occ,  # v1.1-6 linsong
+        with_direct=with_direct,
     ),
     # In order to align the source code, the threshold of the val phase is
     # 0.01, and the threshold of the test phase is 0.001.
@@ -70,12 +81,22 @@ train_pipeline = [
         type='Mosaic',
         img_scale=img_scale,
         pad_val=114.0,
-        center_ratio_range=(1.0, 1.0)),
+        center_ratio_range=(0.5, 1.5),
+        prob=0.5,
+        skip_filter=skip_filter,
+        with_ignore=with_ignore,
+        with_occ=with_occ,
+        with_direct=with_direct),
     ##############
-    # dict(
-    #     type='RandomAffine',
-    #     scaling_ratio_range=(0.1, 2),
-    #     border=(-img_scale[0] // 2, -img_scale[1] // 2)),
+    dict(
+        type='RandomAffine',
+        scaling_ratio_range=(0.1, 2),
+        border=(-img_scale[0] // 2, -img_scale[1] // 2),
+        skip_filter=skip_filter,
+        with_occ=with_occ,
+        with_direct=with_direct,
+    ),
+    ##############
     dict(type='YOLOXHSVRandomAug'),
     dict(type='RandomFlip', flip_ratio=0.5),
     dict(type='Resize', img_scale=img_scale, keep_ratio=True),
@@ -108,7 +129,11 @@ train_dataset = dict(
         img_prefix=data_root + 'train/',
         pipeline=[
             dict(type='LoadImageFromFile'),
-            dict(type='LoadAnnotations', with_bbox=True, with_occ=True),
+            dict(
+                type='LoadAnnotations',
+                with_bbox=True,
+                with_occ=True,
+                with_direct=True),
         ],
         filter_empty_gt=False,
     ),
