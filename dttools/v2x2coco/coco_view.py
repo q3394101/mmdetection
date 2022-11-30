@@ -120,8 +120,8 @@ if __name__ == '__main__':
     DEBUG = False
     SHOW_OCC = False
     random.seed(0)
-    data_root = '/home/ubuntu/workspace/xianjd/mmdetection/dttools/dt_data/orin_data/'  # noqa E501
-    ann_file = data_root + 'dtcoco.json'
+    data_root = '/home/ubuntu/workspace/xianjd/mmdetection/data/coco_dt/'  # noqa E501
+    ann_file = data_root + 'annotations/train.json'
     img_prefix = data_root + 'train'
     show_coco(data_root, ann_file, img_prefix)
 
