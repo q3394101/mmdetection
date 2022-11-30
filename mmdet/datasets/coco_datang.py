@@ -22,9 +22,9 @@ from .custom import CustomDataset
 @DATASETS.register_module()
 class CocoDataset_datang(CustomDataset):
 
-    CLASSES = ('Car', 'Bus', 'Cycling', 'Pedestrian', 'driverless_Car', 'Truck',
-               'Animal', 'Obstacle', 'Special_Target', 'Other_Objects',
-               'Unmanned_riding')
+    CLASSES = ('Car', 'Bus', 'Cycling', 'Pedestrian', 'driverless_Car',
+               'Truck', 'Animal', 'Obstacle', 'Special_Target',
+               'Other_Objects', 'Unmanned_riding')
 
     PALETTE = [(220, 20, 60), (119, 11, 32), (0, 0, 142), (0, 0, 230),
                (106, 0, 228), (0, 60, 100), (0, 80, 100), (0, 0, 70),
