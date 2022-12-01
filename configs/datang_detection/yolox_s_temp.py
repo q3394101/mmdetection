@@ -27,7 +27,7 @@ skip_filter = False
 
 img_norm_cfg = dict(
     mean=[0, 0, 0],
-    std=[1, 1, 1],
+    std=[255, 255, 255],
 )
 
 # model settings
@@ -71,12 +71,17 @@ model = dict(
 ########################### data loading pipeline 2022-10-08 ######################################### noqa E501,E266
 
 # dataset settings
-# data_root = '/home/chenzhen/code/detection/datasets/coco100/'  # noqa E501
 data_root = './data/coco_dt/'
 dataset_type = 'CocoDataset_datang'
 
 train_pipeline = [
     #################### TODO:ratio  v1.1-3 # noqa E266
+    dict(type='RoadPaste',
+         img_scale=img_scale,
+         pad_val=114,
+         center_ratio_range=(0.5, 1.5),
+         prob=0.5,
+         roadname='date_captured'),
     dict(
         type='Mosaic',
         img_scale=img_scale,
@@ -100,6 +105,7 @@ train_pipeline = [
     dict(type='YOLOXHSVRandomAug'),
     dict(type='RandomFlip', flip_ratio=0.5),
     dict(type='Resize', img_scale=img_scale, keep_ratio=True),
+    dict(type='Normalize', **img_norm_cfg),
     dict(
         type='Pad',
         pad_to_square=True,
@@ -148,6 +154,7 @@ test_pipeline = [
         transforms=[
             dict(type='Resize', keep_ratio=True),
             dict(type='RandomFlip'),
+            dict(type='Normalize', **img_norm_cfg),
             dict(
                 type='Pad',
                 pad_to_square=True,

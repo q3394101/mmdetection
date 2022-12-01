@@ -475,7 +475,9 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
                 for i in range(0, ignore_weight_map[pos_masks].size(0))
             ]  # up low left right # v1.1-5 low-bound
             loss_l1 = torch.sum(
-                torch.sum(loss_l1 * torch.tensor(bound_weight), 1) *
+                torch.sum(loss_l1 * torch.tensor(bound_weight,
+                                                 dtype=torch.float,
+                                                 device=flatten_bbox_preds.device), 1) *
                 ignore_weight_map[pos_masks]) / num_total_samples  # v1.1-2
             loss_dict.update(loss_l1=loss_l1)
 

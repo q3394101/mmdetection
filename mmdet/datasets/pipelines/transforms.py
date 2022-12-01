@@ -3081,3 +3081,146 @@ class CopyPaste:
         repr_str += f'mask_occluded_thr={self.mask_occluded_thr}, '
         repr_str += f'selected={self.selected}, '
         return repr_str
+
+import torch
+@PIPELINES.register_module()
+class RoadPaste:
+    """RoadPaste augmentation.
+    """
+
+    def __init__(self,
+                 img_scale=(640, 640),
+                 center_ratio_range=(0.5, 1.5),
+                 min_bbox_size=0,
+                 bbox_clip_border=True,
+                 skip_filter=True,
+                 pad_val=114,
+                 prob=1.0,
+                 roadname='date_captured'):
+        assert isinstance(img_scale, tuple)
+        assert 0 <= prob <= 1.0, 'The probability should be in range [0,1]. '\
+            f'got {prob}.'
+
+        log_img_scale(img_scale, skip_square=True)
+        self.img_scale = img_scale
+        self.center_ratio_range = center_ratio_range
+        self.min_bbox_size = min_bbox_size
+        self.bbox_clip_border = bbox_clip_border
+        self.skip_filter = skip_filter
+        self.pad_val = pad_val
+        self.prob = prob
+        self.roadname = roadname
+
+    def __call__(self, results):
+        """Call function to make a mosaic of image.
+
+        Args:
+            results (dict): Result dict.
+
+        Returns:
+            dict: Result dict with mosaic transformed.
+        """
+
+        if random.uniform(0, 1) > self.prob:
+            return results
+
+        results = self._paste_transform(results)
+        return results
+
+    def get_indexes(self, dataset):
+        """Call function to collect indexes.
+
+        Args:
+            dataset (:obj:`MultiImageMixDataset`): The dataset.
+
+        Returns:
+            list: indexes.
+        """
+
+        indexes = [random.randint(0, len(dataset)) for _ in range(3)]
+        return indexes
+
+    def compute_iou(self, box1, box2):
+        """Compute the intersection over union of two set of boxes, each box is [x1,y1,x2,y2].
+        """
+
+        N = box1.size(0)
+        M = box2.size(0)
+
+        lt = torch.max(
+            box1[:, :2].unsqueeze(1).expand(N, M, 2),
+            box2[:, :2].unsqueeze(0).expand(N, M, 2),
+        )
+
+        rb = torch.min(
+            box1[:, 2:].unsqueeze(1).expand(N, M, 2),
+            box2[:, 2:].unsqueeze(0).expand(N, M, 2),
+        )
+
+        wh = rb - lt
+        wh[wh < 0] = 0
+        inter = wh[:, :, 0] * wh[:, :, 1]
+
+        area1 = (box1[:, 2] - box1[:, 0]) * (box1[:, 3] - box1[:, 1])
+        area2 = (box2[:, 2] - box2[:, 0]) * (box2[:, 3] - box2[:, 1])
+        area1 = area1.unsqueeze(1).expand_as(inter)
+        area2 = area2.unsqueeze(0).expand_as(inter)
+
+        iou = inter / (area1 + area2 - inter)
+        return iou
+
+    def _paste_transform(self, results):
+        """RoadPaste transform function.
+
+        Args:
+            results (dict): Result dict.
+
+        Returns:
+            dict: Updated result dict.
+        """
+
+        assert 'mix_results' in results
+        # step1: roadside matching
+        match_id_list=[]
+        for id in range(len(results['mix_results'])):
+            if results['img_info'][self.roadname] == results['mix_results'][id]['img_info'][self.roadname]:
+                match_id_list.append(id)
+        if match_id_list == []:
+            return results
+        else:
+            # step2: find paste-allowed objects
+            if len(match_id_list) == 1:
+                match_id = match_id_list[0]
+            else:
+                match_id =  match_id_list[random.randint(0,len(match_id_list)-1)]
+            dst_bboxes = torch.from_numpy(results['gt_bboxes'])
+            dst_ig_bboxes = torch.from_numpy(results['gt_bboxes_ignore'])
+            src_bboxes = torch.from_numpy(results['mix_results'][match_id]['gt_bboxes'])
+            # src_ig_bboxes = torch.from_numpy(results['mix_results'][match_id]['gt_bboxes_ignore'])
+
+            ious_gt = self.compute_iou(src_bboxes, dst_bboxes).numpy()
+            ious_gt_ignore =self.compute_iou(src_bboxes,dst_ig_bboxes).numpy()
+            ious_self = self.compute_iou(src_bboxes,src_bboxes).numpy()
+            # step3: select object and paste
+            for i in range(len(src_bboxes)):
+                if ious_self[i].sum()==1 and ious_gt[i].sum() == 0 and ious_gt_ignore[i].sum()==0:
+                    if random.randint(0,1) ==0:
+                        paste_bbox = results['mix_results'][match_id]['gt_bboxes'][i]
+                        paste_labels = results['mix_results'][match_id]['gt_labels'][i]
+                        # print(paste_labels)
+                        results['gt_bboxes']= np.concatenate((results['gt_bboxes'],np.array([paste_bbox])))
+                        results['gt_labels'] = np.concatenate((results['gt_labels'], np.array([paste_labels])))
+                        results['img'][int(paste_bbox[1]):int(paste_bbox[3]),int(paste_bbox[0]):int(paste_bbox[2]),:] = results['mix_results'][match_id]['img'][int(paste_bbox[1]):int(paste_bbox[3]),int(paste_bbox[0]):int(paste_bbox[2]),:]
+                        results['gt_occs'] = np.concatenate((results['gt_occs'], np.array([0.0])))
+                        results['gt_direct'] = np.concatenate((results['gt_direct'], np.array([0.0])))
+
+        return results
+
+    def __repr__(self):
+        repr_str = self.__class__.__name__
+        repr_str += f'img_scale={self.img_scale}, '
+        repr_str += f'center_ratio_range={self.center_ratio_range}, '
+        repr_str += f'pad_val={self.pad_val}, '
+        repr_str += f'min_bbox_size={self.min_bbox_size}, '
+        repr_str += f'skip_filter={self.skip_filter})'
+        return repr_str
