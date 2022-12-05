@@ -70,7 +70,7 @@ def voc_eval(result, dataset, iou_thr=0.5, nproc=4):
         dataset_name = 'voc07'
     else:
         dataset_name = dataset.CLASSES
-    eval_map(
+    _, eval_results = eval_map(
         result,
         annotations,
         scale_ranges=None,
@@ -78,7 +78,7 @@ def voc_eval(result, dataset, iou_thr=0.5, nproc=4):
         dataset=dataset_name,
         logger='print',
         nproc=nproc)
-
+    return eval_results
 
 def dis_analyze_per_img_dets(
     result_matrix,
@@ -180,9 +180,17 @@ def main():
             ds_cfg.test_mode = True
     dataset = build_dataset(cfg.data.test)
     dataset_name = list(dataset.CLASSES)
-    print('\n----------------datasets-------------------\n')
-    print(dataset)
-    # 1 cal tp fp
+    # print('\n----------------datasets-------------------\n')
+    # print(dataset)
+
+    print('\n------------cal_val-----------------------\n')
+    # 1.map
+    eval_results = voc_eval(results, dataset, tp_iou_thr, 4)
+    num_gts = np.zeros((1, len(dataset_name)), dtype=int)
+    for i, cls_result in enumerate(eval_results):
+        num_gts[:, i] = cls_result['num_gts']
+
+    # 2. cal tp fp
     TP_confusion_matrix = calculate_num_confusion_matrix(
         dataset,
         results,
@@ -193,18 +201,16 @@ def main():
     np.set_printoptions(precision=4, suppress=True)
     tp = TP_confusion_matrix.diagonal()
     fp = TP_confusion_matrix.sum(0) - tp  # false positives
-    fn = TP_confusion_matrix[:, -1]  # false negatives (missed detections)
+    pure_fp = TP_confusion_matrix[-1,:]
+    confusion_fp = fp - pure_fp
+    # fn = TP_confusion_matrix[:, -1]  # false negatives (missed detections)
+    fn = num_gts[0] - tp[:-1]
     print('\n----------------cal_tp_fp_fn-------------------\n')
 
-    # print('\ntp', tp,
-    #       '\nfp', fp,
-    #       '\nfn', fn,
-    #       )
-
     for i in range(len(dataset_name)):
-        print('{}: tp:{}     |     fp:{}     |     fn:{}'.format(
-            dataset_name[i], tp[i], fp[i], fn[i]))
-    # 2 cal dis loss
+        print('{}: tp:{}     |     pure_fp:{}      |     confusion_fp:{}     |     fn:{}'.format(
+            dataset_name[i], tp[i], pure_fp[i], confusion_fp[i], fn[i]))
+    # 3. cal dis loss
     DIS_confusion_matrix = calculate_dis_confusion_matrix(
         dataset, results, score_thr=score_thr, tp_iou_thr=tp_iou_thr)
     np.set_printoptions(precision=4, suppress=True)
@@ -223,10 +229,6 @@ def main():
     print('\n-------------line_result_normal----------------------\n')
     for i in range(len(dataset_name)):
         print('{} : {}'.format(dataset_name[i], line_result_normal[i]))
-
-    print('\n------------cal_val-----------------------\n')
-    # 3.map
-    voc_eval(results, dataset, tp_iou_thr, 4)
 
 
 if __name__ == '__main__':

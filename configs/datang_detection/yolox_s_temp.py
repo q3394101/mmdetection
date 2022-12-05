@@ -71,7 +71,7 @@ model = dict(
 ########################### data loading pipeline 2022-10-08 ######################################### noqa E501,E266
 
 # dataset settings
-data_root = './data/coco_dt/'
+data_root = '/home/chenzhen/code/detection/datasets/dair-and-dthangzhou/'
 dataset_type = 'CocoDataset_datang'
 
 train_pipeline = [

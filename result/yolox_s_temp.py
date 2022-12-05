@@ -27,8 +27,8 @@ model = dict(
         with_occ=True,
         with_direct=True),
     test_cfg=dict(score_thr=0.01, nms=dict(type='nms', iou_threshold=0.65)))
-# data_root = '/home/chenzhen/code/detection/datasets/coco100/'
-data_root = '/home/chenzhen/code/detection/datasets/union2voc_multiClass/coco/'
+
+data_root = '/home/chenzhen/code/detection/datasets/dair-and-dthangzhou/'
 dataset_type = 'CocoDataset_datang'
 
 train_pipeline = [
@@ -207,6 +207,8 @@ optimizer = dict(
     weight_decay=0.0005,
     nesterov=True,
     paramwise_cfg=dict(norm_decay_mult=0.0, bias_decay_mult=0.0))
+
+
 optimizer_config = dict(grad_clip=None)
 max_epochs = 300
 num_last_epochs = 15
@@ -236,7 +238,7 @@ custom_hooks = [
         momentum=0.0001,
         priority=49)
 ]
-checkpoint_config = dict(interval=999)
+checkpoint_config = dict(interval=interval)
 evaluation = dict(
     save_best='auto',
     interval=999,
