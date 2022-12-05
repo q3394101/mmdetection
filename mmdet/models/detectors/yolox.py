@@ -92,6 +92,10 @@ class YOLOX(SingleStageDetector):
             dict[str, Tensor]: A dictionary of loss components.
         """
         # Multi-scale training
+
+        from tools.img_show import imshow
+        imshow(img, gt_bboxes)
+
         img, gt_bboxes = self._preprocess(img, gt_bboxes)
         x = self.extract_feat(img)
 

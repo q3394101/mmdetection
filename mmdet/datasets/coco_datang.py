@@ -154,7 +154,7 @@ class CocoDataset_datang(CustomDataset):
         # occ_ignore_thre = [80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80]
         occ_ignore_thre = [5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
 
-        direct_ignore_thre = [80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80]
+        direct_ignore_thre = [5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
         # occ_ignore_thre = [10, 10, 10, 10, 10, 10, 10, 10]
         for i, ann in enumerate(ann_info):
             if ann.get('ignore', False):

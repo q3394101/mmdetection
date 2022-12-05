@@ -59,7 +59,7 @@ def calculate_dis_confusion_matrix(dataset,
         gt_bboxes = ann['bboxes']
         labels = ann['labels']
         dis_analyze_per_img_dets(result_matrix, gt_bboxes, labels, res_bboxes,
-                                 score_thr, tp_iou_thr)
+                                 score_thr, tp_iou_thr,)
         prog_bar.update()
     return result_matrix
 
@@ -195,13 +195,13 @@ def main():
         dataset,
         results,
         score_thr=score_thr,
-        nms_iou_thr=None,
+        nms_iou_thr=0.6,
         tp_iou_thr=tp_iou_thr,
         area_size=area_size)
     np.set_printoptions(precision=4, suppress=True)
     tp = TP_confusion_matrix.diagonal()
     fp = TP_confusion_matrix.sum(0) - tp  # false positives
-    pure_fp = TP_confusion_matrix[-1,:]
+    pure_fp = TP_confusion_matrix[-1, :]
     confusion_fp = fp - pure_fp
     # fn = TP_confusion_matrix[:, -1]  # false negatives (missed detections)
     fn = num_gts[0] - tp[:-1]
@@ -233,3 +233,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

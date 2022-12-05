@@ -569,7 +569,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
                 gt_bboxes_occs = gt_bboxes_occs.to(
                     decoded_bboxes.dtype)  # v1.1-6
             else:
-                gt_bboxes_occs = decoded_bboxes.new_empty(0, )  # v1.1-6
+
                 gt_bboxes_occs = decoded_bboxes.new_empty(0, )  # v1.1-6
 
             if with_direct:
@@ -578,8 +578,8 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
                 gt_bboxes_direct = decoded_bboxes.new_empty(0, )
 
             # normalize
-            gt_bboxes_occs /= 100  # v1.1-6
-            # gt_bboxes_direct /= 100
+            gt_bboxes_occs /= 4  # v1.1-6
+            gt_bboxes_direct /= 4
 
             gt_bboxes_all = torch.cat((gt_bboxes, gt_bboxes_ignore))
             gt_labels_all = torch.cat(
