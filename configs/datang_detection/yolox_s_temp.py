@@ -14,8 +14,8 @@ import os
 DEBUG = True
 if os.environ.get('DEBUG', False):
     DEBUG = True
-batch_size = 2
-img_scale = (640, 640)  # height, width
+batch_size = 1
+img_scale = (800, 800)  # height, width
 CLASSES = ('Car', 'Bus', 'Cycling', 'Pedestrian', 'driverless_Car', 'Truck',
            'Animal', 'Obstacle', 'Special_Target', 'Other_Objects',
            'Unmanned_riding')
