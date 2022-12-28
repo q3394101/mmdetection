@@ -240,14 +240,14 @@ class LoadAnnotations:
         self.with_label = with_label
         self.with_mask = with_mask
         self.with_seg = with_seg
-        self.with_occ = with_occ  # v1.1-6
+        self.with_occ = with_occ # v1.1-6
         self.with_direct = with_direct
         self.poly2mask = poly2mask
         self.denorm_bbox = denorm_bbox
         self.file_client_args = file_client_args.copy()
         self.file_client = None
 
-    def _load_occlusion(self, results):  # v1.1-6
+    def _load_occlusion(self, results): # v1.1-6
         """Private function to load occlusion annotations. v1.1-1
         Args:
             results (dict): Result dict from :obj:`mmdet.CustomDataset`.
@@ -256,25 +256,8 @@ class LoadAnnotations:
             dict: The dict contains loaded occlusion annotations.
         """
         ann_info = results['ann_info']
-        results['gt_occs'] = ann_info.get('occ',
-                                          np.empty([
-                                              0,
-                                          ], dtype=np.float32)).copy()
-        return results
-
-    def _load_direction(self, results):  # v1.1-6
-        """Private function to load occlusion annotations. v1.1-1
-        Args:
-            results (dict): Result dict from :obj:`mmdet.CustomDataset`.
-
-        Returns:
-            dict: The dict contains loaded occlusion annotations.
-        """
-        ann_info = results['ann_info']
-        results['gt_direct'] = ann_info.get('direct',
-                                            np.empty([
-                                                0,
-                                            ], dtype=np.float32)).copy()
+        results['gt_occs'] = ann_info['occ'].copy()
+        results['gt_direct'] = ann_info['direct'].copy()
         return results
 
     def _load_bboxes(self, results):
@@ -433,17 +416,17 @@ class LoadAnnotations:
             results = self._load_masks(results)
         if self.with_seg:
             results = self._load_semantic_seg(results)
-        if self.with_occ:  # v1.1-6
+        if self.with_occ: # v1.1-6
             results = self._load_occlusion(results)
         if self.with_direct:  # v1.1-6
-            results = self._load_direction(results)
+            results = self._load_occlusion(results)
         return results
 
     def __repr__(self):
         repr_str = self.__class__.__name__
         repr_str += f'(with_bbox={self.with_bbox}, '
         repr_str += f'with_label={self.with_label}, '
-        repr_str += f'with_occ={self.with_occ}, '  # v1.1-6
+        repr_str += f'with_occ={self.with_occ}, ' # v1.1-6
         repr_str += f'with_direct={self.with_direct}, '  # v1.1-6
         repr_str += f'with_mask={self.with_mask}, '
         repr_str += f'with_seg={self.with_seg}, '
@@ -668,8 +651,7 @@ class FilterAnnotations:
 
         keep = keep.nonzero()[0]
         #  v1.1-1
-        keys = ('gt_bboxes', 'gt_labels', 'gt_masks', 'gt_occs', 'gt_direct'
-                )  # v1.1-6
+        keys = ('gt_bboxes', 'gt_labels', 'gt_masks', ) # v1.1-6
         for key in keys:
             if key in results:
                 results[key] = results[key][keep]

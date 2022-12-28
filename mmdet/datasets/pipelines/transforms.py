@@ -3,6 +3,7 @@ import copy
 import inspect
 import math
 import warnings
+import torch
 
 import cv2
 import mmcv
@@ -2005,19 +2006,14 @@ class Mosaic:
             Default to 1.0.
     """
 
-    def __init__(
-        self,
-        img_scale=(640, 640),
-        center_ratio_range=(0.5, 1.5),
-        min_bbox_size=0,
-        bbox_clip_border=True,
-        skip_filter=True,
-        pad_val=114,
-        prob=1.0,
-        with_ignore=False,
-        with_occ=False,
-        with_direct=False,
-    ):
+    def __init__(self,
+                 img_scale=(640, 640),
+                 center_ratio_range=(0.5, 1.5),
+                 min_bbox_size=0,
+                 bbox_clip_border=True,
+                 skip_filter=True,
+                 pad_val=114,
+                 prob=1.0):
         assert isinstance(img_scale, tuple)
         assert 0 <= prob <= 1.0, 'The probability should be in range [0,1]. ' \
                                  f'got {prob}.'
@@ -2030,16 +2026,11 @@ class Mosaic:
         self.skip_filter = skip_filter
         self.pad_val = pad_val
         self.prob = prob
-        self.with_ignore = with_ignore
-        self.with_occ = with_occ
-        self.with_direct = with_direct
 
     def __call__(self, results):
         """Call function to make a mosaic of image.
-
         Args:
             results (dict): Result dict.
-
         Returns:
             dict: Result dict with mosaic transformed.
         """
@@ -2052,10 +2043,8 @@ class Mosaic:
 
     def get_indexes(self, dataset):
         """Call function to collect indexes.
-
         Args:
             dataset (:obj:`MultiImageMixDataset`): The dataset.
-
         Returns:
             list: indexes.
         """
@@ -2065,10 +2054,8 @@ class Mosaic:
 
     def _mosaic_transform(self, results):
         """Mosaic transform function.
-
         Args:
             results (dict): Result dict.
-
         Returns:
             dict: Updated result dict.
         """
@@ -2076,13 +2063,6 @@ class Mosaic:
         assert 'mix_results' in results
         mosaic_labels = []
         mosaic_bboxes = []
-        if self.with_ignore:
-            mosaic_ignores = []
-        if self.with_occ:
-            mosaic_occs = []
-        if self.with_direct:
-            mosaic_direct = []
-
         if len(results['img'].shape) == 3:
             mosaic_img = np.full(
                 (int(self.img_scale[0] * 2), int(self.img_scale[1] * 2), 3),
@@ -2129,13 +2109,6 @@ class Mosaic:
             gt_bboxes_i = results_patch['gt_bboxes']
             gt_labels_i = results_patch['gt_labels']
 
-            if self.with_ignore:
-                mosaic_ignores_i = results_patch['gt_bboxes_ignore']
-            if self.with_occ:
-                mosaic_occs_i = results_patch['gt_occs']
-            if self.with_direct:
-                mosaic_direct_i = results_patch['gt_direct']
-
             if gt_bboxes_i.shape[0] > 0:
                 padw = x1_p - x1_c
                 padh = y1_p - y1_c
@@ -2144,32 +2117,12 @@ class Mosaic:
                 gt_bboxes_i[:, 1::2] = \
                     scale_ratio_i * gt_bboxes_i[:, 1::2] + padh
 
-                if self.with_ignore and mosaic_ignores_i.shape[0]:
-                    mosaic_ignores_i[:, 0::2] \
-                        = scale_ratio_i * mosaic_ignores_i[:,0::2] + padw # noqa E231
-                    mosaic_ignores_i[:, 1::2] \
-                        = scale_ratio_i * mosaic_ignores_i[:,1::2] + padh # noqa E231
-
             mosaic_bboxes.append(gt_bboxes_i)
             mosaic_labels.append(gt_labels_i)
-
-            if self.with_ignore:
-                mosaic_ignores.append(mosaic_ignores_i)
-            if self.with_occ:
-                mosaic_occs.append(mosaic_occs_i)
-            if self.with_direct:
-                mosaic_direct.append(mosaic_direct_i)
 
         if len(mosaic_labels) > 0:
             mosaic_bboxes = np.concatenate(mosaic_bboxes, 0)
             mosaic_labels = np.concatenate(mosaic_labels, 0)
-
-            if self.with_ignore:
-                mosaic_ignores = np.concatenate(mosaic_ignores)
-            if self.with_occ:
-                mosaic_occs = np.concatenate(mosaic_occs, 0)
-            if self.with_direct:
-                mosaic_direct = np.concatenate(mosaic_direct, 0)
 
             if self.bbox_clip_border:
                 mosaic_bboxes[:, 0::2] = np.clip(mosaic_bboxes[:, 0::2], 0,
@@ -2177,29 +2130,9 @@ class Mosaic:
                 mosaic_bboxes[:, 1::2] = np.clip(mosaic_bboxes[:, 1::2], 0,
                                                  2 * self.img_scale[0])
 
-                if self.with_ignore and mosaic_ignores.shape[0]:
-                    mosaic_ignores[:, 0::2] = np.clip(mosaic_ignores[:, 0::2],
-                                                      0, 2 * self.img_scale[1])
-                    mosaic_ignores[:, 1::2] = np.clip(mosaic_ignores[:, 1::2],
-                                                      0, 2 * self.img_scale[0])
-
             if not self.skip_filter:
-                if self.with_ignore and mosaic_ignores.shape[0]:
-                    bbox_inds, ignore_inds = \
-                        self._filter_box_candidates_ignore_return_inds(
-                            mosaic_bboxes, mosaic_ignores)
-                    mosaic_ignores = mosaic_ignores[ignore_inds]
-                else:
-                    bbox_inds = self._filter_box_candidates_return_inds(
-                        mosaic_bboxes)
-
-                mosaic_bboxes = mosaic_bboxes[bbox_inds]
-                mosaic_labels = mosaic_labels[bbox_inds]
-
-                if self.with_occ:
-                    mosaic_occs = mosaic_occs[bbox_inds]
-                if self.with_direct:
-                    mosaic_direct = mosaic_direct[bbox_inds]
+                mosaic_bboxes, mosaic_labels = \
+                    self._filter_box_candidates(mosaic_bboxes, mosaic_labels)
 
         # remove outside bboxes
         inside_inds = find_inside_bboxes(mosaic_bboxes, 2 * self.img_scale[0],
@@ -2207,42 +2140,22 @@ class Mosaic:
         mosaic_bboxes = mosaic_bboxes[inside_inds]
         mosaic_labels = mosaic_labels[inside_inds]
 
-        if self.with_occ:
-            mosaic_occs = mosaic_occs[inside_inds]
-        if self.with_direct:
-            mosaic_direct = mosaic_direct[inside_inds]
-
-        if self.with_ignore and mosaic_ignores.shape[0]:
-            inside_inds = find_inside_bboxes(mosaic_ignores,
-                                             2 * self.img_scale[0],
-                                             2 * self.img_scale[1])
-            mosaic_ignores = mosaic_ignores[inside_inds]
-
         results['img'] = mosaic_img
         results['img_shape'] = mosaic_img.shape
         results['gt_bboxes'] = mosaic_bboxes
         results['gt_labels'] = mosaic_labels
-
-        if self.with_ignore:
-            results['gt_bboxes_ignore'] = mosaic_ignores
-        if self.with_occ:
-            results['gt_occs'] = mosaic_occs
-        if self.with_direct:
-            results['gt_direct'] = mosaic_direct
 
         return results
 
     def _mosaic_combine(self, loc, center_position_xy, img_shape_wh):
         """Calculate global coordinate of mosaic image and local coordinate of
         cropped sub-image.
-
         Args:
             loc (str): Index for the sub-image, loc in ('top_left',
               'top_right', 'bottom_left', 'bottom_right').
             center_position_xy (Sequence[float]): Mixing center for 4 images,
                 (x, y).
             img_shape_wh (Sequence[int]): Width and height of sub-image
-
         Returns:
             tuple[tuple[float]]: Corresponding coordinate of pasting and
                 cropping
@@ -2257,7 +2170,7 @@ class Mosaic:
                              center_position_xy[0], \
                              center_position_xy[1]
             crop_coord = img_shape_wh[0] - (x2 - x1), img_shape_wh[1] - (
-                y2 - y1), img_shape_wh[0], img_shape_wh[1]
+                    y2 - y1), img_shape_wh[0], img_shape_wh[1]
 
         elif loc == 'top_right':
             # index1 to top right part of image
@@ -2301,30 +2214,6 @@ class Mosaic:
                      (bbox_h > self.min_bbox_size)
         valid_inds = np.nonzero(valid_inds)[0]
         return bboxes[valid_inds], labels[valid_inds]
-
-    def _filter_box_candidates_return_inds(self, bboxes):
-        """Filter out bboxes too small after Mosaic."""
-        bbox_w = bboxes[:, 2] - bboxes[:, 0]
-        bbox_h = bboxes[:, 3] - bboxes[:, 1]
-        valid_inds = (bbox_w > self.min_bbox_size) & \
-                     (bbox_h > self.min_bbox_size)
-        valid_inds = np.nonzero(valid_inds)[0]
-        return valid_inds
-
-    def _filter_box_candidates_ignore_return_inds(self, bboxes, ignore_bboxes):
-        """Filter out bboxes too small after Mosaic."""
-        bbox_w = bboxes[:, 2] - bboxes[:, 0]
-        bbox_h = bboxes[:, 3] - bboxes[:, 1]
-        valid_inds = (bbox_w > self.min_bbox_size) & \
-                     (bbox_h > self.min_bbox_size)
-        valid_inds = np.nonzero(valid_inds)[0]
-        valid_ignore_inds = None
-        if ignore_bboxes.shape[0]:
-            ignore_w = ignore_bboxes[:, 2] - ignore_bboxes[:, 0]
-            ignore_h = ignore_bboxes[:, 3] - ignore_bboxes[:, 1]
-            valid_ignore_inds = (ignore_w > self.min_bbox_size) & (
-                ignore_h > self.min_bbox_size)
-        return valid_inds, valid_ignore_inds
 
     def __repr__(self):
         repr_str = self.__class__.__name__
@@ -2470,7 +2359,7 @@ class MixUp:
         retrieve_img = retrieve_results['img']
 
         jit_factor = random.uniform(*self.ratio_range)
-        is_filp = random.uniform(0, 1) < self.flip_ratio
+        is_filp = random.uniform(0, 1) > self.flip_ratio
 
         if len(retrieve_img.shape) == 3:
             out_img = np.ones(
@@ -2640,22 +2529,18 @@ class RandomAffine:
             is invalid. Default to True.
     """
 
-    def __init__(
-        self,
-        max_rotate_degree=10.0,
-        max_translate_ratio=0.1,
-        scaling_ratio_range=(0.5, 1.5),
-        max_shear_degree=2.0,
-        border=(0, 0),
-        border_val=(114, 114, 114),
-        min_bbox_size=2,
-        min_area_ratio=0.2,
-        max_aspect_ratio=20,
-        bbox_clip_border=True,
-        skip_filter=True,
-        with_occ=False,
-        with_direct=False,
-    ):
+    def __init__(self,
+                 max_rotate_degree=10.0,
+                 max_translate_ratio=0.1,
+                 scaling_ratio_range=(0.5, 1.5),
+                 max_shear_degree=2.0,
+                 border=(0, 0),
+                 border_val=(114, 114, 114),
+                 min_bbox_size=2,
+                 min_area_ratio=0.2,
+                 max_aspect_ratio=20,
+                 bbox_clip_border=True,
+                 skip_filter=True):
         assert 0 <= max_translate_ratio <= 1
         assert scaling_ratio_range[0] <= scaling_ratio_range[1]
         assert scaling_ratio_range[0] > 0
@@ -2670,8 +2555,6 @@ class RandomAffine:
         self.max_aspect_ratio = max_aspect_ratio
         self.bbox_clip_border = bbox_clip_border
         self.skip_filter = skip_filter
-        self.with_occ = with_occ
-        self.with_direct = with_direct
 
     def __call__(self, results):
         img = results['img']
@@ -2749,11 +2632,6 @@ class RandomAffine:
                 if key in ['gt_bboxes']:
                     if 'gt_labels' in results:
                         results['gt_labels'] = results['gt_labels'][
-                            valid_index]
-                    if self.with_occ and 'gt_occs' in results:
-                        results['gt_occs'] = results['gt_occs'][valid_index]
-                    if self.with_direct and 'gt_direct' in results:
-                        results['gt_direct'] = results['gt_direct'][
                             valid_index]
 
                 if 'gt_masks' in results:
@@ -2917,7 +2795,6 @@ class CopyPaste:
         self.bbox_occluded_thr = bbox_occluded_thr
         self.mask_occluded_thr = mask_occluded_thr
         self.selected = selected
-        self.paste_by_box = False
 
     def get_indexes(self, dataset):
         """Call function to collect indexes.s.
@@ -2928,42 +2805,6 @@ class CopyPaste:
             list: Indexes.
         """
         return random.randint(0, len(dataset))
-
-    def gen_masks_from_bboxes(self, bboxes, img_shape):
-        """Generate gt_masks based on gt_bboxes.
-
-        Args:
-            bboxes (list): The bboxes's list.
-            img_shape (tuple): The shape of image.
-        Returns:
-            BitmapMasks
-        """
-        self.paste_by_box = True
-        img_h, img_w = img_shape[:2]
-        xmin, ymin = bboxes[:, 0:1], bboxes[:, 1:2]
-        xmax, ymax = bboxes[:, 2:3], bboxes[:, 3:4]
-        gt_masks = np.zeros((len(bboxes), img_h, img_w), dtype=np.uint8)
-        for i in range(len(bboxes)):
-            gt_masks[i,
-                     int(ymin[i]):int(ymax[i]),
-                     int(xmin[i]):int(xmax[i])] = 1
-        return BitmapMasks(gt_masks, img_h, img_w)
-
-    def get_gt_masks(self, results):
-        """Get gt_masks originally or generated based on bboxes.
-
-        If gt_masks is not contained in results,
-        it will be generated based on gt_bboxes.
-        Args:
-            results (dict): Result dict.
-        Returns:
-            BitmapMasks: gt_masks, originally or generated based on bboxes.
-        """
-        if results.get('gt_masks', None) is not None:
-            return results['gt_masks']
-        else:
-            return self.gen_masks_from_bboxes(
-                results.get('gt_bboxes', []), results['img'].shape)
 
     def __call__(self, results):
         """Call function to make a copy-paste of image.
@@ -2978,13 +2819,6 @@ class CopyPaste:
         num_images = len(results['mix_results'])
         assert num_images == 1, \
             f'CopyPaste only supports processing 2 images, got {num_images}'
-
-        # Get gt_masks originally or generated based on bboxes.
-        results['gt_masks'] = self.get_gt_masks(results)
-        # only one mix picture
-        results['mix_results'][0]['gt_masks'] = self.get_gt_masks(
-            results['mix_results'][0])
-
         if self.selected:
             selected_results = self._select_object(results['mix_results'][0])
         else:
@@ -3030,8 +2864,6 @@ class CopyPaste:
         src_masks = src_results['gt_masks']
 
         if len(src_bboxes) == 0:
-            if self.paste_by_box:
-                dst_results.pop('gt_masks')
             return dst_results
 
         # update masks and generate bboxes from updated masks
@@ -3060,11 +2892,8 @@ class CopyPaste:
         dst_results['img'] = img
         dst_results['gt_bboxes'] = bboxes
         dst_results['gt_labels'] = labels
-        if self.paste_by_box:
-            dst_results.pop('gt_masks')
-        else:
-            dst_results['gt_masks'] = BitmapMasks(masks, masks.shape[1],
-                                                  masks.shape[2])
+        dst_results['gt_masks'] = BitmapMasks(masks, masks.shape[1],
+                                              masks.shape[2])
 
         return dst_results
 
@@ -3082,7 +2911,7 @@ class CopyPaste:
         repr_str += f'selected={self.selected}, '
         return repr_str
 
-import torch
+
 @PIPELINES.register_module()
 class RoadPaste:
     """RoadPaste augmentation.

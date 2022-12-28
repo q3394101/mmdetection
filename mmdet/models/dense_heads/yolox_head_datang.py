@@ -50,51 +50,52 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         init_cfg (dict or list[dict], optional): Initialization config dict.
     """
 
-    def __init__(
-        self,
-        num_classes,
-        in_channels,
-        feat_channels=256,
-        stacked_convs=2,
-        strides=[8, 16, 32],
-        use_depthwise=False,
-        dcn_on_last_conv=False,
-        conv_bias='auto',
-        conv_cfg=None,
-        norm_cfg=dict(type='BN', momentum=0.03, eps=0.001),
-        act_cfg=dict(type='Swish'),
-        bound_loss=dict(  # bound_loss v1.1-6
-            type='BoundLoss',
-            mode='linear',
-            eps=1e-16,
-            reduction='none',
-            loss_weight=1.0),
-        loss_cls=dict(
-            type='CrossEntropyLoss',
-            use_sigmoid=True,
-            reduction='none',
-            loss_weight=1.0),
-        loss_bbox=dict(
-            type='IoULoss',
-            mode='square',
-            eps=1e-16,
-            reduction='none',
-            loss_weight=5.0),
-        loss_obj=dict(
-            type='CrossEntropyLoss',
-            use_sigmoid=True,
-            reduction='sum',
-            loss_weight=1.0),
-        loss_l1=dict(type='L1Loss', reduction='none', loss_weight=1.0),
-        train_cfg=None,
-        test_cfg=None,
-        init_cfg=dict(
-            type='Kaiming',
-            layer='Conv2d',
-            a=math.sqrt(5),
-            distribution='uniform',
-            mode='fan_in',
-            nonlinearity='leaky_relu')):
+    def __init__(self,
+                 num_classes,
+                 in_channels,
+                 feat_channels=256,
+                 stacked_convs=2,
+                 strides=[8, 16, 32],
+                 use_depthwise=False,
+                 dcn_on_last_conv=False,
+                 conv_bias='auto',
+                 conv_cfg=None,
+                 norm_cfg=dict(type='BN', momentum=0.03, eps=0.001),
+                 act_cfg=dict(type='Swish'),
+                 bound_loss=dict(  # bound_loss v1.1-6
+                     type='BoundLoss',
+                     mode='linear',
+                     eps=1e-16,
+                     reduction='none',
+                     loss_weight=1.0),
+                 loss_cls=dict(
+                     type='CrossEntropyLoss',
+                     use_sigmoid=True,
+                     reduction='none',
+                     class_weight=[1,10,5,5,10,10,1,1,1,1,10],
+                     loss_weight=1.0),
+                 loss_bbox=dict(
+                     type='IoULoss',
+                     mode='square',
+                     eps=1e-16,
+                     reduction='none',
+                     loss_weight=5.0),
+                 loss_obj=dict(
+                     type='CrossEntropyLoss',
+                     use_sigmoid=True,
+                     reduction='sum',
+                     loss_weight=1.0),
+                 loss_l1=dict(
+                     type='L1Loss', reduction='none', loss_weight=1.0),
+                 train_cfg=None,
+                 test_cfg=None,
+                 init_cfg=dict(
+                     type='Kaiming',
+                     layer='Conv2d',
+                     a=math.sqrt(5),
+                     distribution='uniform',
+                     mode='fan_in',
+                     nonlinearity='leaky_relu')):
 
         super().__init__(init_cfg=init_cfg)
         self.num_classes = num_classes
@@ -108,7 +109,6 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         assert conv_bias == 'auto' or isinstance(conv_bias, bool)
         self.conv_bias = conv_bias
         self.use_sigmoid_cls = True
-
         self.conv_cfg = conv_cfg
         self.norm_cfg = norm_cfg
         self.act_cfg = act_cfg
@@ -120,11 +120,10 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         self.use_l1 = False  # This flag will be modified by hooks.
         self.loss_l1 = build_loss(loss_l1)
 
-        self.ues_bound_loss = False  # This flag will be modified by hooks v1.1-6 # noqa E501
+        self.ues_bound_loss = False  # This flag will be modified by hooks v1.1-6
         self.bound_loss = build_loss(bound_loss)
 
         self.prior_generator = MlvlPointGenerator(strides, offset=0)
-
         self.test_cfg = test_cfg
         self.train_cfg = train_cfg
 
@@ -394,8 +393,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         flatten_bboxes = self._bbox_decode(flatten_priors, flatten_bbox_preds)
 
         (pos_masks, cls_targets, obj_targets, bbox_targets, l1_targets,
-         num_fg_imgs, ignore_weight_map,
-         occs_weight_map, direct_weight_map) = multi_apply(
+         num_fg_imgs, ignore_weight_map, occs_weight_map, direct_weight_map) = multi_apply(
              self._get_target_single, flatten_cls_preds.detach(),
              flatten_objectness.detach(),
              flatten_priors.unsqueeze(0).repeat(num_imgs, 1, 1),
@@ -442,8 +440,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
             flatten_bboxes.view(-1, 4)[pos_masks], bbox_targets)
         loss_bbox = torch.sum(
             loss_bbox * ignore_weight_map[pos_masks] *
-            occ_reg_weight_map[pos_masks] *
-            direct_reg_weight_map[pos_masks]) / num_total_samples  # v1.1-2
+            occ_reg_weight_map[pos_masks] * direct_reg_weight_map[pos_masks]) / num_total_samples  # v1.1-2
 
         # loss_obj = self.loss_obj(flatten_objectness.view(-1, 1),
         #                          obj_targets)
@@ -460,8 +457,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
             cls_targets)
         loss_cls = torch.sum(
             torch.sum(loss_cls, 1) * ignore_weight_map[pos_masks] *
-            occ_cls_weight_map[pos_masks] *
-            direct_cls_weight_map[pos_masks]) / num_total_samples  # v1.1-2
+            occ_cls_weight_map[pos_masks] * direct_cls_weight_map[pos_masks]) / num_total_samples  # v1.1-2
 
         loss_dict = dict(
             loss_cls=loss_cls, loss_bbox=loss_bbox, loss_obj=loss_obj)
@@ -475,18 +471,13 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
                 for i in range(0, ignore_weight_map[pos_masks].size(0))
             ]  # up low left right # v1.1-5 low-bound
             loss_l1 = torch.sum(
-                torch.sum(loss_l1 * torch.tensor(bound_weight,
-                                                 dtype=torch.float,
-                                                 device=flatten_bbox_preds.device), 1) *
+                torch.sum(loss_l1 * torch.tensor(bound_weight, dtype=torch.float, device=flatten_bbox_preds.device), 1) *
                 ignore_weight_map[pos_masks]) / num_total_samples  # v1.1-2
             loss_dict.update(loss_l1=loss_l1)
 
-        if self.ues_bound_loss:  # v1.1-6
-            bound_loss = self.bound_loss(
-                flatten_bboxes.view(-1, 4)[pos_masks], bbox_targets)
-            bound_loss = torch.sum(
-                bound_loss * ignore_weight_map[pos_masks] *
-                occ_reg_weight_map[pos_masks]) / num_total_samples
+        if self.ues_bound_loss:  #v1.1-6
+            bound_loss = self.bound_loss( flatten_bboxes.view(-1, 4)[pos_masks],bbox_targets)
+            bound_loss = torch.sum(bound_loss * ignore_weight_map[pos_masks]*occ_reg_weight_map[pos_masks]) / num_total_samples
             loss_dict.update(bound_loss=bound_loss)
 
         return loss_dict
@@ -522,7 +513,6 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
             gt_bboxes_ignore:
             gt_bboxes_occs:
         """
-
         num_priors = priors.size(0)
         num_gts = gt_labels.size(0)
         num_igs = gt_bboxes_ignore.size(0)  # v1.1-2
@@ -532,15 +522,14 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         if num_gts == 0:
             ignore_weight_map = torch.ones_like(objectness).float()  # v1.1-2
             occs_weight_map = torch.ones_like(objectness).float()  # v1.1-6
-            direct_weight_map = torch.ones_like(objectness).float()  # v1.1-6
+            direct_weight_map = torch.ones_like(objectness).float() #v1.1-6
             cls_target = cls_preds.new_zeros((0, self.num_classes))
             bbox_target = cls_preds.new_zeros((0, 4))
             l1_target = cls_preds.new_zeros((0, 4))
             obj_target = cls_preds.new_zeros((num_priors, 1))
             foreground_mask = cls_preds.new_zeros(num_priors).bool()
             return (foreground_mask, cls_target, obj_target, bbox_target,
-                    l1_target, 0, ignore_weight_map, occs_weight_map,
-                    direct_weight_map)
+                    l1_target, 0, ignore_weight_map, occs_weight_map,direct_weight_map)
 
         # YOLOX uses center priors with 0.5 offset to assign targets,
         # but use center priors without offset to regress bboxes.
@@ -557,20 +546,17 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         occs_weight_map = torch.ones_like(objectness).float()
         direct_weight_map = torch.ones_like(objectness).float()
         if num_igs != 0:
-            with_ignore = self.train_cfg.get('with_ignore', False)  # v1.1-6
-            with_occ = self.train_cfg.get('with_occ', False)  # v1.1-6
+            with_ignore = self.train_cfg.get('with_ignore', False) # v1.1-6
+            with_occ = self.train_cfg.get('with_occ', False) # v1.1-6
             with_direct = self.train_cfg.get('with_direct', False)  # v1.1-6
             if with_ignore:
-                gt_bboxes_ignore = gt_bboxes_ignore.to(
-                    decoded_bboxes.dtype)  # v1.1-6
+                gt_bboxes_ignore = gt_bboxes_ignore.to(decoded_bboxes.dtype) # v1.1-6
             else:
-                gt_bboxes_ignore = decoded_bboxes.new_empty(0, 4)  # v1.1-6
+                gt_bboxes_ignore = decoded_bboxes.new_empty(0, 4) # v1.1-6
             if with_occ:
-                gt_bboxes_occs = gt_bboxes_occs.to(
-                    decoded_bboxes.dtype)  # v1.1-6
+                gt_bboxes_occs = gt_bboxes_occs.to(decoded_bboxes.dtype) # v1.1-6
             else:
-
-                gt_bboxes_occs = decoded_bboxes.new_empty(0, )  # v1.1-6
+                gt_bboxes_occs = decoded_bboxes.new_empty(0, ) # v1.1-6
 
             if with_direct:
                 gt_bboxes_direct = gt_bboxes_direct.to(decoded_bboxes.dtype)
@@ -578,7 +564,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
                 gt_bboxes_direct = decoded_bboxes.new_empty(0, )
 
             # normalize
-            gt_bboxes_occs /= 4  # v1.1-6
+            gt_bboxes_occs /= 4# v1.1-6
             gt_bboxes_direct /= 4
 
             gt_bboxes_all = torch.cat((gt_bboxes, gt_bboxes_ignore))
@@ -586,8 +572,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
                 (gt_labels, gt_labels.new_zeros(num_igs)))
 
             gt_bboxes_direct_all = torch.cat(
-                (gt_bboxes_direct,
-                 gt_bboxes_direct.new_zeros(num_igs)))  # v1.1-6
+                (gt_bboxes_direct, gt_bboxes_direct.new_zeros(num_igs))) # v1.1-6
 
             gt_bboxes_occs_all = torch.cat(
                 (gt_bboxes_occs, gt_bboxes_occs.new_zeros(num_igs)))  # v1.1-6
@@ -595,9 +580,12 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
             assign_result = self.assigner.assign(
                 cls_preds.sigmoid() * objectness.unsqueeze(1).sigmoid(),
                 offset_priors, decoded_bboxes, gt_bboxes_all, gt_labels_all
-            )  # assign all bbox, we know last `num_igs` bbox is ignored
+            )
+
+            # assign all bbox, we know last `num_igs` bbox is ignored
             sampling_result = self.sampler.sample(assign_result, priors,
                                                   gt_bboxes_all)
+
             for ig_indx in range(num_gts, num_gts + num_igs):
                 ignore_weight_map[sampling_result.pos_inds[torch.nonzero(
                     sampling_result.pos_assigned_gt_inds == ig_indx)]] = 0.0
@@ -606,11 +594,13 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
                 -gt_bboxes_occs_all[sampling_result.pos_assigned_gt_inds]
             )  # v1.1-6
             direct_weight_map[sampling_result.pos_inds] += torch.exp(
-                -gt_bboxes_direct_all[sampling_result.pos_assigned_gt_inds])
+                -gt_bboxes_direct_all[sampling_result.pos_assigned_gt_inds]
+            )
         else:
             assign_result = self.assigner.assign(
                 cls_preds.sigmoid() * objectness.unsqueeze(1).sigmoid(),
                 offset_priors, decoded_bboxes, gt_bboxes, gt_labels)
+
             sampling_result = self.sampler.sample(assign_result, priors,
                                                   gt_bboxes)
 
@@ -628,11 +618,12 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         if self.use_l1:
             l1_target = self._get_l1_target(l1_target, bbox_target,
                                             priors[pos_inds])
+
         foreground_mask = torch.zeros_like(objectness).to(torch.bool)
         foreground_mask[pos_inds] = 1
+
         return (foreground_mask, cls_target, obj_target, bbox_target,
-                l1_target, num_pos_per_img, ignore_weight_map, occs_weight_map,
-                direct_weight_map)  # v1.1-6
+                l1_target, num_pos_per_img, ignore_weight_map, occs_weight_map, direct_weight_map) # v1.1-6
 
     def _get_l1_target(self, l1_target, gt_bboxes, priors, eps=1e-8):
         """Convert gt bboxes to center offset and log width height."""
@@ -676,10 +667,7 @@ class YOLOXHead_DT(BaseDenseHead, BBoxTestMixin):
         else:
             loss_inputs = outs + (gt_bboxes, gt_labels, img_metas)
         losses = self.loss(
-            *loss_inputs,
-            gt_bboxes_ignore=gt_bboxes_ignore,
-            gt_occs=gt_occs,
-            gt_direct=gt_direct)
+            *loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore, gt_occs=gt_occs, gt_direct=gt_direct)
         if proposal_cfg is None:
             return losses
         else:

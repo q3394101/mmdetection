@@ -22,9 +22,8 @@ from .custom import CustomDataset
 @DATASETS.register_module()
 class CocoDataset_datang(CustomDataset):
 
-    CLASSES = ('Car', 'Bus', 'Cycling', 'Pedestrian', 'driverless_Car',
-               'Truck', 'Animal', 'Obstacle', 'Special_Target',
-               'Other_Objects', 'Unmanned_riding')
+    CLASSES = ('Car', 'Bus', 'Cyclist', 'Pedestrian', 'driverless_car',
+               'Truck', 'Tricyclist', 'Trafficcone')
 
     PALETTE = [(220, 20, 60), (119, 11, 32), (0, 0, 142), (0, 0, 230),
                (106, 0, 228), (0, 60, 100), (0, 80, 100), (0, 0, 70),
@@ -62,6 +61,7 @@ class CocoDataset_datang(CustomDataset):
         # The order of returned `cat_ids` will not
         # change with the order of the CLASSES
         self.cat_ids = self.coco.get_cat_ids(cat_names=self.CLASSES)
+        print(self.cat_ids)
 
         self.cat2label = {cat_id: i for i, cat_id in enumerate(self.cat_ids)}
         self.img_ids = self.coco.get_img_ids()
@@ -149,12 +149,12 @@ class CocoDataset_datang(CustomDataset):
         gt_masks_ann = []
         gt_occs = []  # v1.1-1
         gt_direct = []
-
-        # v1.1-1 and v1.1-2 set occ ignore threshold # noqa E501
-        # occ_ignore_thre = [80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80]
-        occ_ignore_thre = [5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
-
-        direct_ignore_thre = [5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+        occ_ignore_thre = [
+            5, 4, 4, 4, 4, 4, 4, 4,4,4,4
+        ]  # v1.1-1 and v1.1-2 set occ ignore threshold # noqa E501
+        direct_ignore_thre = [
+            5, 4, 4, 4, 4, 4, 4, 4,4,4,4
+        ]
         # occ_ignore_thre = [10, 10, 10, 10, 10, 10, 10, 10]
         for i, ann in enumerate(ann_info):
             if ann.get('ignore', False):
@@ -177,7 +177,6 @@ class CocoDataset_datang(CustomDataset):
             elif ann.get('direct', 0) > direct_ignore_thre[int(
                     ann['category_id'])]:
                 gt_bboxes_ignore.append(bbox)
-
             else:
                 gt_bboxes.append(bbox)
                 gt_labels.append(self.cat2label[ann['category_id']])
@@ -210,8 +209,9 @@ class CocoDataset_datang(CustomDataset):
             bboxes_ignore=gt_bboxes_ignore,
             masks=gt_masks_ann,
             seg_map=seg_map,
-            occ=gt_occs,  # v1.1-1
-            direct=gt_direct)
+            occ=gt_occs, # v1.1-1
+            direct=gt_direct
+        )
 
         return ann
 

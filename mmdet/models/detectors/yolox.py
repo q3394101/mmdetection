@@ -1,6 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import random
-
 import torch
 import torch.distributed as dist
 import torch.nn.functional as F
@@ -92,13 +91,11 @@ class YOLOX(SingleStageDetector):
             dict[str, Tensor]: A dictionary of loss components.
         """
         # Multi-scale training
-
-        from tools.img_show import imshow
-        imshow(img, gt_bboxes)
+        # from tools.img_show import imshow
+        # imshow(img, gt_bboxes)
 
         img, gt_bboxes = self._preprocess(img, gt_bboxes)
         x = self.extract_feat(img)
-
         losses = self.bbox_head.forward_train(x, img_metas, gt_bboxes,
                                               gt_labels, gt_bboxes_ignore,
                                               gt_occs, gt_direct)
@@ -149,3 +146,17 @@ class YOLOX(SingleStageDetector):
 
         input_size = (tensor[0].item(), tensor[1].item())
         return input_size
+
+    # def extract_feat(self, img):
+    #     """Directly extract features from the backbone+neck."""
+    #     x = self.backbone(img)
+    #     # 可视化resnet产生的特征
+    #     from tools.feature_visualization import draw_feature_map
+    #     draw_feature_map(x)
+    #     if self.with_neck:
+    #         x = self.neck(x)
+    #         # 可视化FPN产生的特征
+    #         from tools.feature_visualization import draw_feature_map
+    #         draw_feature_map(x)
+    #
+    #     return x

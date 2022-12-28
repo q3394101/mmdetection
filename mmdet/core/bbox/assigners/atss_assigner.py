@@ -154,7 +154,7 @@ class ATSSAssigner(BaseAssigner):
         bboxes_points = torch.stack((bboxes_cx, bboxes_cy), dim=1)
 
         distances = (bboxes_points[:, None, :] -
-                     gt_points[None, :, :]).pow(2).sum(-1).sqrt()
+                     gt_points[None, :, :]).pow(2).sum(-1).sqrt() #gt和bboxes之间的l2距离
 
         if (self.ignore_iof_thr > 0 and gt_bboxes_ignore is not None
                 and gt_bboxes_ignore.numel() > 0 and bboxes.numel() > 0):

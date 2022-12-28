@@ -1,19 +1,18 @@
 import math
-
+from mmcv.utils import print_log
 import matplotlib
 import mmcv
 import numpy as np
 import torch.nn as nn
 from mmcv import Config
 from mmcv.ops import nms
-
+from terminaltables import AsciiTable
 from mmdet.core import eval_map
 from mmdet.core.evaluation.bbox_area import bbox_area
 from mmdet.core.evaluation.bbox_overlaps import bbox_overlaps
 from mmdet.datasets import build_dataset
 from mmdet.utils import replace_cfg_vals, update_data_root
 
-matplotlib.use('TkAgg')
 pair = nn.PairwiseDistance(p=2)
 
 
@@ -160,8 +159,8 @@ def main():
     tp_iou_thr = 0.5
     exp = 1e-7
     root = '/home/chenzhen/code/detection/mmdetection/'
-    prediction_path = root + 'result/2399_40_results.pkl'
-    config = root + 'result/yolox_s_temp.py'
+    prediction_path = root + 'result/800-class-weight.pkl'
+    config = root + 'configs/datang_detection/yolox_s_temp.py'
     cfg = Config.fromfile(config)
     cfg = replace_cfg_vals(cfg)
     update_data_root(cfg)
@@ -207,9 +206,16 @@ def main():
     fn = num_gts[0] - tp[:-1]
     print('\n----------------cal_tp_fp_fn-------------------\n')
 
+    header1 = ['class', 'tp', 'pure_fp', 'conf_fp', 'fn']
+    table_data1 = [header1]
     for i in range(len(dataset_name)):
-        print('{}: tp:{}     |     pure_fp:{}      |     confusion_fp:{}     |     fn:{}'.format(
-            dataset_name[i], tp[i], pure_fp[i], confusion_fp[i], fn[i]))
+        row_data1 = [
+            dataset_name[i], tp[i], pure_fp[i], confusion_fp[i], fn[i]
+        ]
+        table_data1.append(row_data1)
+    table1 = AsciiTable(table_data1)
+    print_log('\n' + table1.table)
+
     # 3. cal dis loss
     DIS_confusion_matrix = calculate_dis_confusion_matrix(
         dataset, results, score_thr=score_thr, tp_iou_thr=tp_iou_thr)
@@ -223,14 +229,17 @@ def main():
         map(lambda x: x[0] / (x[1] + exp),
             zip(list(DIS_confusion_matrix[:, 1]), tp)))
 
-    print('\n-------------point_result_normal----------------------\n')
+    header2 = ['class', 'point_result_normal', 'line_result_normal']
+    table_data2 = [header2]
     for i in range(len(dataset_name)):
-        print('{} : {}'.format(dataset_name[i], point_result_normal[i]))
-    print('\n-------------line_result_normal----------------------\n')
-    for i in range(len(dataset_name)):
-        print('{} : {}'.format(dataset_name[i], line_result_normal[i]))
+        row_data2 = [
+            dataset_name[i], f'{point_result_normal[i]:.3f}', f'{line_result_normal[i]:.3f}'
+        ]
+        table_data2.append(row_data2)
+    table2 = AsciiTable(table_data2)
+    print_log('\n' + table2.table)
+
 
 
 if __name__ == '__main__':
     main()
-
