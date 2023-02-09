@@ -1,6 +1,7 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from mmcv.visualization import imshow_bboxes
-import matplotlib.pyplot as plt
+
 from mmdet.core import build_anchor_generator
 
 if __name__ == '__main__':

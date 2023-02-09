@@ -85,8 +85,6 @@ def multiclass_nms(multi_bboxes,
 
     dets, keep = batched_nms(bboxes, scores, labels, nms_cfg)
 
-
-
     if max_num > 0:
         dets = dets[:max_num]
         keep = keep[:max_num]

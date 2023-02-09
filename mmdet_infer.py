@@ -1,33 +1,28 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from argparse import ArgumentParser
 from pathlib import Path
+
 import cv2
 import numpy as np
+from pycocotools.coco import COCO
 from tqdm import trange
 
 from mmdet.apis import inference_detector, init_detector
-from pycocotools.coco import COCO
 
-img_path = Path('/home/chenzhen/code/detection/datasets/dt_imgdata/coco_dt/val')
-config_path = Path('/home/chenzhen/code/detection/mmdetection/configs/datang_detection/yolox_s_temp.py')
-checkpoint = Path('/home/chenzhen/code/detection/mmdetection/checkpoint/800-v1.0-model.pth')
-anno_path = Path('/home/chenzhen/code/detection/datasets/dt_imgdata/coco_dt/annotations/val.json')
-draw_path = Path('/home/chenzhen/code/detection/datasets/dt_imgdata/v1.0-Pedestrian-imgs')
+img_path = Path(
+    '/home/chenzhen/code/detection/datasets/dt_imgdata/coco_dt/val')
+config_path = Path('/home/chenzhen/code/detection/mmdetection/'
+                   'configs/datang_detection/yolox_s_temp.py')
+checkpoint = Path('/home/chenzhen/code/detection/mmdetection/'
+                  'checkpoint/800-v1.0-model.pth')
+anno_path = Path('/home/chenzhen/code/detection/datasets/'
+                 'dt_imgdata/coco_dt/annotations/val.json')
+draw_path = Path('/home/chenzhen/code/detection/datasets/'
+                 'dt_imgdata/v1.0-Pedestrian-imgs')
 draw_path.mkdir(parents=True, exist_ok=True)
 
-CLASSES = (
-    "Car",
-    "Bus",
-    "Cycling",
-    "Pedestrian",
-    "driverless_Car",
-    "Truck",
-    "Animal",
-    "Obstacle",
-    "Special_Target",
-    "Other_Objects",
-    "Unmanned_riding"
-)
+CLASSES = ('Car', 'Bus', 'Cycling', 'Pedestrian', 'driverless_Car', 'Truck',
+           'Animal', 'Obstacle', 'Special_Target', 'Other_Objects',
+           'Unmanned_riding')
 
 red = (255, 0, 0)
 blue = (0, 0, 255)
@@ -54,10 +49,9 @@ def box_iou(box1, box2, eps=1e-7):
     cols = bboxes2.shape[0]
     ious = np.zeros((1, cols), dtype=np.float32)
 
-    area1 = (bboxes1[2] - bboxes1[0] + eps) * (
-            bboxes1[3] - bboxes1[1] + eps)
+    area1 = (bboxes1[2] - bboxes1[0] + eps) * (bboxes1[3] - bboxes1[1] + eps)
     area2 = (bboxes2[:, 2] - bboxes2[:, 0] + eps) * (
-            bboxes2[:, 3] - bboxes2[:, 1] + eps)
+        bboxes2[:, 3] - bboxes2[:, 1] + eps)
     for i in range(bboxes2.shape[0]):
         x_start = np.maximum(bboxes2[i, 0], bboxes1[0])
         y_start = np.maximum(bboxes2[i, 1], bboxes1[1])
@@ -78,8 +72,13 @@ def draw(image, bbox, name, color, xywh=True):
     else:
         x0, y0, x1, y1 = map(lambda x: int(round(x)), bbox)
     cv2.rectangle(image, [x0, y0], [x1, y1], color, 2)
-    cv2.putText(image, name, (x0, y0 - 2), cv2.FONT_HERSHEY_SIMPLEX,
-                0.5, color, thickness=1)
+    cv2.putText(
+        image,
+        name, (x0, y0 - 2),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.5,
+        color,
+        thickness=1)
     return image
 
 
@@ -128,8 +127,9 @@ def main():
                 img = draw(img, bbox, f'Pedestrian_{s:.3f}', blue, xywh=False)
             try:
                 for *bbox, c in others[other_id, :]:
-                    img = draw(img, bbox, category_names[int(c)], orange, xywh=False)
-            except:
+                    img = draw(
+                        img, bbox, category_names[int(c)], orange, xywh=False)
+            except Exception:
                 pass
 
             cv2.imwrite(str(draw_path / image_data['file_name']), img)

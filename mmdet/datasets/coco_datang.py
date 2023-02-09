@@ -132,11 +132,9 @@ class CocoDataset_datang(CustomDataset):
         gt_occs = []  # v1.1-1
         gt_truncate = []
         occ_ignore_thre = [
-            5, 4, 4, 4, 4, 4, 4, 4,4,4,4
+            5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4
         ]  # v1.1-1 and v1.1-2 set occ ignore threshold # noqa E501
-        truncate_ignore_thre = [
-            5, 4, 4, 4, 4, 4, 4, 4,4,4,4
-        ]
+        truncate_ignore_thre = [5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
         # occ_ignore_thre = [10, 10, 10, 10, 10, 10, 10, 10]
         for i, ann in enumerate(ann_info):
             if ann.get('ignore', False):
@@ -167,7 +165,8 @@ class CocoDataset_datang(CustomDataset):
                 # gt_occs.append(ann.get('occ', 10))  # debug v1.1-1
                 gt_occs.append(ann.get('occlude', 0))  # use v1.1-1, default:0
                 gt_occs.append(ann.get('occ', 0))  # use v1.1-1, default:0
-                gt_truncate.append(ann.get('truncate', 0))  # use v1.1-1, default:0
+                gt_truncate.append(ann.get('truncate',
+                                           0))  # use v1.1-1, default:0
 
         if gt_bboxes:
             gt_bboxes = np.array(gt_bboxes, dtype=np.float32)
@@ -193,9 +192,8 @@ class CocoDataset_datang(CustomDataset):
             bboxes_ignore=gt_bboxes_ignore,
             masks=gt_masks_ann,
             seg_map=seg_map,
-            occ=gt_occs, # v1.1-1
-            truncate=gt_truncate
-        )
+            occ=gt_occs,  # v1.1-1
+            truncate=gt_truncate)
 
         return ann
 

@@ -1,16 +1,16 @@
+import os
+
 import mmcv
 import numpy as np
 from mmcv import Config
 
 from mmdet.datasets import build_dataloader, build_dataset
-import matplotlib.pyplot as plt
 
-import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-
-cfg = Config.fromfile('/home/chenzhen/code/detection/mmdetection/configs/datang_detection/yolox_s_temp.py')
+cfg = Config.fromfile('/home/chenzhen/code/detection/mmdetection/configs/'
+                      'datang_detection/yolox_s_temp.py')
 # print(cfg)
 # cfg.gpu_ids = [0]
 cfg.gpu_ids = range(0, 1)
@@ -69,5 +69,5 @@ for i in range(3):
 means.reverse()
 stdevs.reverse()
 
-print("normMean = {}".format(means))
-print("normStd = {}".format(stdevs))
+print('normMean = {}'.format(means))
+print('normStd = {}'.format(stdevs))

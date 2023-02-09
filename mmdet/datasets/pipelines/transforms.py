@@ -7,6 +7,7 @@ import warnings
 import cv2
 import mmcv
 import numpy as np
+import torch
 from numpy import random
 
 from mmdet.core import BitmapMasks, PolygonMasks, find_inside_bboxes
@@ -3082,11 +3083,10 @@ class CopyPaste:
         repr_str += f'selected={self.selected}, '
         return repr_str
 
-import torch
+
 @PIPELINES.register_module()
 class RoadPaste:
-    """RoadPaste augmentation.
-    """
+    """RoadPaste augmentation."""
 
     def __init__(self,
                  img_scale=(640, 640),
@@ -3141,7 +3141,10 @@ class RoadPaste:
         return indexes
 
     def compute_iou(self, box1, box2):
-        """Compute the intersection over union of two set of boxes, each box is [x1,y1,x2,y2].
+        """Compute the intersection over union of two set of boxes, each box
+        is.
+
+        [x1,y1,x2,y2].
         """
 
         N = box1.size(0)
@@ -3183,7 +3186,8 @@ class RoadPaste:
         # step1: roadside matching
         match_id_list = []
         for id in range(len(results['mix_results'])):
-            if results['img_info'][self.roadname] == results['mix_results'][id]['img_info'][self.roadname]:
+            if results['img_info'][self.roadname] == results['mix_results'][
+                    id]['img_info'][self.roadname]:
                 match_id_list.append(id)
         if match_id_list == []:
             return results
@@ -3192,27 +3196,43 @@ class RoadPaste:
             if len(match_id_list) == 1:
                 match_id = match_id_list[0]
             else:
-                match_id = match_id_list[random.randint(0, len(match_id_list)-1)]
+                match_id = match_id_list[random.randint(
+                    0,
+                    len(match_id_list) - 1)]
             dst_bboxes = torch.from_numpy(results['gt_bboxes'])
             dst_ig_bboxes = torch.from_numpy(results['gt_bboxes_ignore'])
-            src_bboxes = torch.from_numpy(results['mix_results'][match_id]['gt_bboxes'])
-            # src_ig_bboxes = torch.from_numpy(results['mix_results'][match_id]['gt_bboxes_ignore'])
+            src_bboxes = torch.from_numpy(
+                results['mix_results'][match_id]['gt_bboxes'])
 
             ious_gt = self.compute_iou(src_bboxes, dst_bboxes).numpy()
-            ious_gt_ignore =self.compute_iou(src_bboxes, dst_ig_bboxes).numpy()
+            ious_gt_ignore = self.compute_iou(src_bboxes,
+                                              dst_ig_bboxes).numpy()
             ious_self = self.compute_iou(src_bboxes, src_bboxes).numpy()
             # step3: select object and paste
             for i in range(len(src_bboxes)):
-                if ious_self[i].sum() == 1 and ious_gt[i].sum() == 0 and ious_gt_ignore[i].sum()==0:
+                if ious_self[i].sum() == 1 and ious_gt[i].sum(
+                ) == 0 and ious_gt_ignore[i].sum() == 0:
                     if random.randint(0, 1) == 0:
-                        paste_bbox = results['mix_results'][match_id]['gt_bboxes'][i]
-                        paste_labels = results['mix_results'][match_id]['gt_labels'][i]
+                        paste_bbox = results['mix_results'][match_id][
+                            'gt_bboxes'][i]
+                        paste_labels = results['mix_results'][match_id][
+                            'gt_labels'][i]
                         # print(paste_labels)
-                        results['gt_bboxes'] = np.concatenate((results['gt_bboxes'], np.array([paste_bbox])))
-                        results['gt_labels'] = np.concatenate((results['gt_labels'], np.array([paste_labels])))
-                        results['img'][int(paste_bbox[1]):int(paste_bbox[3]), int(paste_bbox[0]):int(paste_bbox[2]), :] = results['mix_results'][match_id]['img'][int(paste_bbox[1]):int(paste_bbox[3]),int(paste_bbox[0]):int(paste_bbox[2]),:]
-                        results['gt_occs'] = np.concatenate((results['gt_occs'], np.array([0.0])))
-                        results['gt_truncate'] = np.concatenate((results['gt_truncate'], np.array([0.0])))
+                        results['gt_bboxes'] = np.concatenate(
+                            (results['gt_bboxes'], np.array([paste_bbox])))
+                        results['gt_labels'] = np.concatenate(
+                            (results['gt_labels'], np.array([paste_labels])))
+                        results['img'][
+                            int(paste_bbox[1]):int(paste_bbox[3]),
+                            int(paste_bbox[0]):int(
+                                paste_bbox[2]
+                            ), :] = results['mix_results'][match_id]['img'][
+                                int(paste_bbox[1]):int(paste_bbox[3]),
+                                int(paste_bbox[0]):int(paste_bbox[2]), :]
+                        results['gt_occs'] = np.concatenate(
+                            (results['gt_occs'], np.array([0.0])))
+                        results['gt_truncate'] = np.concatenate(
+                            (results['gt_truncate'], np.array([0.0])))
 
         return results
 

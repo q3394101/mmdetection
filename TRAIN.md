@@ -46,6 +46,7 @@ categories = [{
     "supercategory": str,
 }]
 ```
+
 如果你浏览过新数据集，你会发现格式如下：
 
 ```json
@@ -131,6 +132,7 @@ categories = [{
     'name': 'polygon'}}},
  'size': 1115004}
 ```
+
 ## 准备配置文件
 
 第二步需要准备一个配置文件来成功加载数据集。
@@ -284,6 +286,7 @@ load_from = ''
 ```shell
 python tools/train.py configs/balloon/mask_rcnn_r50_caffe_fpn_mstrain-poly_1x_balloon.py
 ```
+
 ## 测试以及推理
 
 为了测试训练完毕的模型，你只需要运行如下命令。

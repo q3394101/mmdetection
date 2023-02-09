@@ -205,7 +205,8 @@ interval = 5  # debug: 999  use: 1 or 2  (save checkpoint, eval checkpoint)
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
 load_from = None
-# load_from = "/home/chenzhen/code/detection/mmdetection/checkpoint/yolox-repvgg-train1-best.pth"
+# load_from = "/home/chenzhen/code/detection/mmdetection/checkpoint/
+# yolox-repvgg-train1-best.pth"
 resume_from = None
 work_dir = './work_dirs/yolox_s_temp-3'
 workflow = [('train', 1)]
@@ -240,12 +241,8 @@ custom_hooks = [
         resume_from=resume_from,
         momentum=0.0001,
         priority=49),
-    dict(
-        type="SimOTAVisualizeHook",
-    ),
-    dict(
-        type='BaseShowDataPipline',
-    )
+    dict(type='SimOTAVisualizeHook', ),
+    dict(type='BaseShowDataPipline', )
 ]
 checkpoint_config = dict(interval=interval)
 evaluation = dict(

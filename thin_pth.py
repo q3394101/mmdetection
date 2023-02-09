@@ -1,17 +1,19 @@
 import os
+
 import torch
 
 root_dir = os.getcwd()
 
 
 def thin_pth():
-    pth_path = '/media/chenzhen/SeagateExpansionDrive/dt_mm/modle/yolox-repvgg-1.0.pth'
+    pth_path = '/media/chenzhen/SeagateExpansionDrive/dt_mm/model/' \
+               'yolox-repvgg-1.0.pth'
     state_dict = torch.load(os.path.join(root_dir, pth_path))
     work_dir = os.path.dirname(pth_path)
     pth_name = str(os.path.basename(pth_path)).split('.')[0]
     out_path = os.path.join(root_dir, work_dir, f'{pth_name}_thin.pth')
     torch.save(state_dict['state_dict'], out_path)
-    print("Thin pth successful")
+    print('Thin pth successful')
     print('| save path:', out_path)
 
 

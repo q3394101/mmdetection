@@ -1,12 +1,14 @@
-import math
-from mmcv.utils import print_log
 import argparse
+import math
+
 import mmcv
 import numpy as np
 import torch.nn as nn
 from mmcv import Config
 from mmcv.ops import nms
+from mmcv.utils import print_log
 from terminaltables import AsciiTable
+
 from mmdet.core import eval_map
 from mmdet.core.evaluation.bbox_area import bbox_area
 from mmdet.core.evaluation.bbox_overlaps import bbox_overlaps
@@ -57,8 +59,14 @@ def calculate_dis_confusion_matrix(dataset,
         ann = dataset.get_ann_info(idx)
         gt_bboxes = ann['bboxes']
         labels = ann['labels']
-        dis_analyze_per_img_dets(result_matrix, gt_bboxes, labels, res_bboxes,
-                                 score_thr, tp_iou_thr, )
+        dis_analyze_per_img_dets(
+            result_matrix,
+            gt_bboxes,
+            labels,
+            res_bboxes,
+            score_thr,
+            tp_iou_thr,
+        )
         prog_bar.update()
     return result_matrix
 
@@ -81,12 +89,12 @@ def voc_eval(result, dataset, iou_thr=0.5, nproc=4):
 
 
 def dis_analyze_per_img_dets(
-        result_matrix,
-        gt_bboxes,
-        gt_labels,
-        result,
-        score_thr=0.3,
-        tp_iou_thr=0.5,
+    result_matrix,
+    gt_bboxes,
+    gt_labels,
+    result,
+    score_thr=0.3,
+    tp_iou_thr=0.5,
 ):
     for det_label, det_bboxes in enumerate(result):
         ious = bbox_overlaps(det_bboxes[:, :4], gt_bboxes)
@@ -96,16 +104,16 @@ def dis_analyze_per_img_dets(
                 for j, gt_label in enumerate(gt_labels):
                     if ious[i, j] >= tp_iou_thr and gt_label == det_label:
                         det_point_y = det_bbox[1] + (
-                                (det_bbox[3] - det_bbox[1]) / 2)
+                            (det_bbox[3] - det_bbox[1]) / 2)
                         det_point_x = det_bbox[2]
 
                         gt_point_y = gt_bboxes[j][1] + (
-                                (gt_bboxes[j][3] - gt_bboxes[j][1]) / 2)
+                            (gt_bboxes[j][3] - gt_bboxes[j][1]) / 2)
                         gt_point_x = gt_bboxes[j][2]
 
                         point_val_result = math.sqrt((
-                                                             (gt_point_x - det_point_x) ** 2) + (
-                                                             (gt_point_y - det_point_y) ** 2))
+                            (gt_point_x - det_point_x)**2) + (
+                                (gt_point_y - det_point_y)**2))
                         line_val_result = gt_bboxes[j][2] - det_bbox[2]
 
                         result_matrix[gt_label, 0] += abs(point_val_result)
@@ -122,7 +130,7 @@ def num_analyze_per_img_dets(confusion_matrix,
                              area_size=None):
     if area_size:
         area_gt = (gt_bboxes[:, 2] - gt_bboxes[:, 0]) * (
-                gt_bboxes[:, 3] - gt_bboxes[:, 1])
+            gt_bboxes[:, 3] - gt_bboxes[:, 1])
         mask = (area_gt > area_size[0]) & (area_gt <= area_size[1])
         gt_bboxes = gt_bboxes[mask]
         gt_labels = gt_labels[mask]
@@ -266,7 +274,8 @@ def main():
     table_data2 = [header2]
     for i in range(len(dataset_name)):
         row_data2 = [
-            dataset_name[i], f'{point_result_normal[i]:.3f}', f'{line_result_normal[i]:.3f}'
+            dataset_name[i], f'{point_result_normal[i]:.3f}',
+            f'{line_result_normal[i]:.3f}'
         ]
         table_data2.append(row_data2)
     table2 = AsciiTable(table_data2)

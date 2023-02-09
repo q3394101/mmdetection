@@ -1,9 +1,11 @@
+import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 from mmcv.visualization import color_val
-import matplotlib.pyplot as plt
-import cv2
 from torchvision import transforms
+
 unloader = transforms.ToPILImage()
+
 
 def imshow(img, gt_bboxes):
     image = img.cpu().clone()  # we clone the tensor to not do changes on it
@@ -17,7 +19,8 @@ def imshow(img, gt_bboxes):
     for bbox in gt_bboxes:
         left_top = (int(bbox[0]), int(bbox[1]))
         right_bottom = (int(bbox[2]), int(bbox[3]))
-        cv2.rectangle(img, left_top, right_bottom, bbox_color, thickness=thickness)
+        cv2.rectangle(
+            img, left_top, right_bottom, bbox_color, thickness=thickness)
 
     plt.imshow(img)
     plt.show()

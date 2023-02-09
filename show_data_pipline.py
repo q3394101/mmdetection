@@ -1,19 +1,20 @@
+import os
+
+import cv2
+import matplotlib.pyplot as plt
 import mmcv
 import numpy as np
 from mmcv import Config
-
-from mmcv.visualization import Color, color_val
+from mmcv.visualization import color_val
 
 from mmdet.datasets import build_dataloader, build_dataset
-import matplotlib.pyplot as plt
 
-import cv2
-import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-
-cfg = Config.fromfile('/home/chenzhen/dt_code/mmdetection/configs/datang_detection/yolox_s_temp.py')
+cfg = Config.fromfile(
+    '/home/chenzhen/dt_code/mmdetection/configs/datang_detection/'
+    'yolox_s_temp.py')
 # print(cfg)
 # cfg.gpu_ids = [0]
 cfg.gpu_ids = range(0, 1)
@@ -55,7 +56,6 @@ for i, data_batch in enumerate(data_loader):
         assert labels.ndim == 1
         assert bboxes.shape[0] == labels.shape[0]
         assert bboxes.shape[1] == 4 or bboxes.shape[1] == 5
-        # colors = ['green', 'red', 'blue', 'cyan', 'yellow', 'magenta', 'white', 'black']
         class_names = None
         score_thr = 0
         bbox_color = 'green'

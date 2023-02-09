@@ -1,7 +1,7 @@
 DEBUG = True
 batch_size = 2
 img_scale = (640, 640)
-CLASSES =  ('Car', 'Bus', 'Cycling', 'Pedestrian', 'driverless_Car', 'Truck',
+CLASSES = ('Car', 'Bus', 'Cycling', 'Pedestrian', 'driverless_Car', 'Truck',
            'Animal', 'Obstacle', 'Special_Target', 'Other_Objects',
            'Unmanned_riding')
 model = dict(
@@ -28,7 +28,8 @@ model = dict(
         with_direct=True),
     test_cfg=dict(score_thr=0.01, nms=dict(type='nms', iou_threshold=0.65)))
 # data_root = '/home/chenzhen/code/detection/datasets/coco100/'
-data_root = '/home/chenzhen/code/detection/datasets/dt_hangzhou/coco_dt_with_date_captured/'
+data_root = '/home/chenzhen/code/detection/datasets/' \
+            'dt_hangzhou/coco_dt_with_date_captured/'
 dataset_type = 'CocoDataset_datang'
 
 train_pipeline = [
@@ -60,12 +61,13 @@ train_dataset = dict(
     type='MultiImageMixDataset',
     dataset=dict(
         type='CocoDataset_datang',
-        classes= ('Car', 'Bus', 'Cycling', 'Pedestrian', 'driverless_Car', 'Truck',
-           'Animal', 'Obstacle', 'Special_Target', 'Other_Objects',
-           'Unmanned_riding'),
-        ann_file=
-        '/home/chenzhen/code/detection/datasets/union2voc_multiClass/coco/annotations/train.json',
-        img_prefix='/home/chenzhen/code/detection/datasets/union2voc_multiClass/coco/train/',
+        classes=('Car', 'Bus', 'Cycling', 'Pedestrian', 'driverless_Car',
+                 'Truck', 'Animal', 'Obstacle', 'Special_Target',
+                 'Other_Objects', 'Unmanned_riding'),
+        ann_file='/home/chenzhen/code/detection/datasets/'
+        'union2voc_multiClass/coco/annotations/train.json',
+        img_prefix='/home/chenzhen/code/detection/datasets/'
+        'union2voc_multiClass/coco/train/',
         pipeline=[
             dict(type='LoadImageFromFile'),
             dict(type='LoadAnnotations', with_bbox=True, with_occ=True)
@@ -122,12 +124,13 @@ data = dict(
         type='MultiImageMixDataset',
         dataset=dict(
             type='CocoDataset_datang',
-            classes=('Car', 'Bus', 'Cycling', 'Pedestrian', 'driverless_Car', 'Truck',
-           'Animal', 'Obstacle', 'Special_Target', 'Other_Objects',
-           'Unmanned_riding'),
-            ann_file=
-            '/home/chenzhen/code/detection/datasets/union2voc_multiClass/coco/annotations/train.json',
-            img_prefix='/home/chenzhen/code/detection/datasets/union2voc_multiClass/coco/train/',
+            classes=('Car', 'Bus', 'Cycling', 'Pedestrian', 'driverless_Car',
+                     'Truck', 'Animal', 'Obstacle', 'Special_Target',
+                     'Other_Objects', 'Unmanned_riding'),
+            ann_file='/home/chenzhen/code/detection/datasets/'
+            'union2voc_multiClass/coco/annotations/train.json',
+            img_prefix='/home/chenzhen/code/detection/datasets/'
+            'union2voc_multiClass/coco/train/',
             pipeline=[
                 dict(type='LoadImageFromFile'),
                 dict(type='LoadAnnotations', with_bbox=True, with_occ=True)
@@ -163,12 +166,13 @@ data = dict(
         ]),
     val=dict(
         type='CocoDataset_datang',
-        classes= ('Car', 'Bus', 'Cycling', 'Pedestrian', 'driverless_Car', 'Truck',
-           'Animal', 'Obstacle', 'Special_Target', 'Other_Objects',
-           'Unmanned_riding'),
-        ann_file=
-        '/home/chenzhen/code/detection/datasets/dt_hangzhou/coco_dt_with_date_captured/annotations/val.json',
-        img_prefix='/home/chenzhen/code/detection/datasets/dt_hangzhou/coco_dt_with_date_captured/val/',
+        classes=('Car', 'Bus', 'Cycling', 'Pedestrian', 'driverless_Car',
+                 'Truck', 'Animal', 'Obstacle', 'Special_Target',
+                 'Other_Objects', 'Unmanned_riding'),
+        ann_file='/home/chenzhen/code/detection/datasets/dt_hangzhou/'
+        'coco_dt_with_date_captured/annotations/val.json',
+        img_prefix='/home/chenzhen/code/detection/datasets/dt_hangzhou/'
+        'coco_dt_with_date_captured/val/',
         pipeline=[
             dict(type='LoadImageFromFile'),
             dict(
@@ -188,12 +192,13 @@ data = dict(
         ]),
     test=dict(
         type='CocoDataset_datang',
-        classes= ('Car', 'Bus', 'Cycling', 'Pedestrian', 'driverless_Car', 'Truck',
-           'Animal', 'Obstacle', 'Special_Target', 'Other_Objects',
-           'Unmanned_riding'),
-        ann_file=
-        '/home/chenzhen/code/detection/datasets/dt_hangzhou/coco_dt_with_date_captured/annotations/val.json',
-        img_prefix='/home/chenzhen/code/detection/datasets/dt_hangzhou/coco_dt_with_date_captured/val/',
+        classes=('Car', 'Bus', 'Cycling', 'Pedestrian', 'driverless_Car',
+                 'Truck', 'Animal', 'Obstacle', 'Special_Target',
+                 'Other_Objects', 'Unmanned_riding'),
+        ann_file='/home/chenzhen/code/detection/datasets/dt_hangzhou/'
+        'coco_dt_with_date_captured/annotations/val.json',
+        img_prefix='/home/chenzhen/code/detection/datasets/dt_hangzhou/'
+        'coco_dt_with_date_captured/val/',
         pipeline=[
             dict(type='LoadImageFromFile'),
             dict(

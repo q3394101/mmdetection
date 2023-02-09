@@ -13,8 +13,8 @@ from .test_time_aug import MultiScaleFlipAug
 from .transforms import (Albu, CopyPaste, CutOut, Expand, MinIoURandomCrop,
                          MixUp, Mosaic, Normalize, Pad, PhotoMetricDistortion,
                          RandomAffine, RandomCenterCropPad, RandomCrop,
-                         RandomFlip, RandomShift, Resize, SegRescale,
-                         YOLOXHSVRandomAug, RoadPaste)
+                         RandomFlip, RandomShift, Resize, RoadPaste,
+                         SegRescale, YOLOXHSVRandomAug)
 
 __all__ = [
     'Compose', 'to_tensor', 'ToTensor', 'ImageToTensor', 'ToDataContainer',
