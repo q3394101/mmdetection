@@ -5,7 +5,7 @@ root_dir = os.getcwd()
 
 
 def thin_pth():
-    pth_path = '/home/chenzhen/code/detection/mmdetection/checkpoint/best_bbox_mAP_epoch_299.pth'
+    pth_path = '/media/chenzhen/SeagateExpansionDrive/dt_mm/modle/yolox-repvgg-1.0.pth'
     state_dict = torch.load(os.path.join(root_dir, pth_path))
     work_dir = os.path.dirname(pth_path)
     pth_name = str(os.path.basename(pth_path)).split('.')[0]

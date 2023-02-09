@@ -72,7 +72,7 @@ class YOLOX(SingleStageDetector):
                       gt_labels,
                       gt_bboxes_ignore=None,
                       gt_occs=None,
-                      gt_direct=None):
+                      gt_truncate=None):
         """
         Args:
             img (Tensor): Input images of shape (N, C, H, W).
@@ -98,7 +98,7 @@ class YOLOX(SingleStageDetector):
         x = self.extract_feat(img)
         losses = self.bbox_head.forward_train(x, img_metas, gt_bboxes,
                                               gt_labels, gt_bboxes_ignore,
-                                              gt_occs, gt_direct)
+                                              gt_occs, gt_truncate)
 
         # losses = super(YOLOX, self).\
         #     forward_train(img, img_metas,

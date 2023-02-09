@@ -148,11 +148,11 @@ class CocoDataset_datang(CustomDataset):
         gt_bboxes_ignore = []
         gt_masks_ann = []
         gt_occs = []  # v1.1-1
-        gt_direct = []
+        gt_truncate = []
         occ_ignore_thre = [
             5, 4, 4, 4, 4, 4, 4, 4,4,4,4
         ]  # v1.1-1 and v1.1-2 set occ ignore threshold # noqa E501
-        direct_ignore_thre = [
+        truncate_ignore_thre = [
             5, 4, 4, 4, 4, 4, 4, 4,4,4,4
         ]
         # occ_ignore_thre = [10, 10, 10, 10, 10, 10, 10, 10]
@@ -174,7 +174,7 @@ class CocoDataset_datang(CustomDataset):
             elif ann.get('occ', 0) > occ_ignore_thre[int(
                     ann['category_id'])]:  # v1.1-2 # noqa E501
                 gt_bboxes_ignore.append(bbox)
-            elif ann.get('direct', 0) > direct_ignore_thre[int(
+            elif ann.get('truncate', 0) > truncate_ignore_thre[int(
                     ann['category_id'])]:
                 gt_bboxes_ignore.append(bbox)
             else:
@@ -183,18 +183,18 @@ class CocoDataset_datang(CustomDataset):
                 gt_masks_ann.append(ann.get('segmentation', None))
                 # gt_occs.append(ann.get('occ', 10))  # debug v1.1-1
                 gt_occs.append(ann.get('occ', 0))  # use v1.1-1, default:0
-                gt_direct.append(ann.get('direct', 0))  # use v1.1-1, default:0
+                gt_truncate.append(ann.get('truncate', 0))  # use v1.1-1, default:0
 
         if gt_bboxes:
             gt_bboxes = np.array(gt_bboxes, dtype=np.float32)
             gt_labels = np.array(gt_labels, dtype=np.int64)
             gt_occs = np.array(gt_occs, dtype=np.float32)  # v1.1-1
-            gt_direct = np.array(gt_direct, dtype=np.float32)
+            gt_truncate = np.array(gt_truncate, dtype=np.float32)
         else:
             gt_bboxes = np.zeros((0, 4), dtype=np.float32)
             gt_labels = np.array([], dtype=np.int64)
             gt_occs = np.array([], dtype=np.float32)  # v1.1-1
-            gt_direct = np.array([], dtype=np.float32)
+            gt_truncate = np.array([], dtype=np.float32)
 
         if gt_bboxes_ignore:
             gt_bboxes_ignore = np.array(gt_bboxes_ignore, dtype=np.float32)
@@ -210,7 +210,7 @@ class CocoDataset_datang(CustomDataset):
             masks=gt_masks_ann,
             seg_map=seg_map,
             occ=gt_occs, # v1.1-1
-            direct=gt_direct
+            truncate=gt_truncate
         )
 
         return ann

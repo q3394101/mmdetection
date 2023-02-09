@@ -1,6 +1,6 @@
 import math
 from mmcv.utils import print_log
-import matplotlib
+import argparse
 import mmcv
 import numpy as np
 import torch.nn as nn
@@ -58,7 +58,7 @@ def calculate_dis_confusion_matrix(dataset,
         gt_bboxes = ann['bboxes']
         labels = ann['labels']
         dis_analyze_per_img_dets(result_matrix, gt_bboxes, labels, res_bboxes,
-                                 score_thr, tp_iou_thr,)
+                                 score_thr, tp_iou_thr, )
         prog_bar.update()
     return result_matrix
 
@@ -79,13 +79,14 @@ def voc_eval(result, dataset, iou_thr=0.5, nproc=4):
         nproc=nproc)
     return eval_results
 
+
 def dis_analyze_per_img_dets(
-    result_matrix,
-    gt_bboxes,
-    gt_labels,
-    result,
-    score_thr=0.3,
-    tp_iou_thr=0.5,
+        result_matrix,
+        gt_bboxes,
+        gt_labels,
+        result,
+        score_thr=0.3,
+        tp_iou_thr=0.5,
 ):
     for det_label, det_bboxes in enumerate(result):
         ious = bbox_overlaps(det_bboxes[:, :4], gt_bboxes)
@@ -95,16 +96,16 @@ def dis_analyze_per_img_dets(
                 for j, gt_label in enumerate(gt_labels):
                     if ious[i, j] >= tp_iou_thr and gt_label == det_label:
                         det_point_y = det_bbox[1] + (
-                            (det_bbox[3] - det_bbox[1]) / 2)
+                                (det_bbox[3] - det_bbox[1]) / 2)
                         det_point_x = det_bbox[2]
 
                         gt_point_y = gt_bboxes[j][1] + (
-                            (gt_bboxes[j][3] - gt_bboxes[j][1]) / 2)
+                                (gt_bboxes[j][3] - gt_bboxes[j][1]) / 2)
                         gt_point_x = gt_bboxes[j][2]
 
                         point_val_result = math.sqrt((
-                            (gt_point_x - det_point_x)**2) + (
-                                (gt_point_y - det_point_y)**2))
+                                                             (gt_point_x - det_point_x) ** 2) + (
+                                                             (gt_point_y - det_point_y) ** 2))
                         line_val_result = gt_bboxes[j][2] - det_bbox[2]
 
                         result_matrix[gt_label, 0] += abs(point_val_result)
@@ -121,7 +122,7 @@ def num_analyze_per_img_dets(confusion_matrix,
                              area_size=None):
     if area_size:
         area_gt = (gt_bboxes[:, 2] - gt_bboxes[:, 0]) * (
-            gt_bboxes[:, 3] - gt_bboxes[:, 1])
+                gt_bboxes[:, 3] - gt_bboxes[:, 1])
         mask = (area_gt > area_size[0]) & (area_gt <= area_size[1])
         gt_bboxes = gt_bboxes[mask]
         gt_labels = gt_labels[mask]
@@ -153,18 +154,50 @@ def num_analyze_per_img_dets(confusion_matrix,
             confusion_matrix[gt_label, -1] += 1
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='DT_detection test (and eval) a model')
+    parser.add_argument('config', help='test config file path')
+    parser.add_argument('checkpoint', help='checkpoint file')
+    parser.add_argument(
+        '--score_thr',
+        type=float,
+        default=0.3,
+        help='score threshold (default: 0.3)')
+    parser.add_argument(
+        '--tp_iou_thr',
+        type=float,
+        default=0.5,
+        help='iou threshold (default: 0.5)')
+    parser.add_argument(
+        '--area_size',
+        type=float,
+        default=None,
+        help='test(val) bbox area range (default: None)')
+    parser.add_argument(
+        '--nms_iou_thr',
+        type=float,
+        default=None,
+        help='nms iou  threshold (default: None)')
+
+    args = parser.parse_args()
+
+    return args
+
+
 def main():
-    area_size = None
-    score_thr = 0.3
-    tp_iou_thr = 0.5
     exp = 1e-7
-    root = '/home/chenzhen/code/detection/mmdetection/'
-    prediction_path = root + 'result/800-class-weight.pkl'
-    config = root + 'configs/datang_detection/yolox_s_temp.py'
+    args = parse_args()
+    config = args.config
+    checkpoint_path = args.checkpoint
+    score_thr = args.score_thr
+    tp_iou_thr = args.tp_iou_thr
+    area_size = args.area_size
+    nms_iou_thr = args.nms_iou_thr
     cfg = Config.fromfile(config)
     cfg = replace_cfg_vals(cfg)
     update_data_root(cfg)
-    results = mmcv.load(prediction_path)
+    results = mmcv.load(checkpoint_path)
     assert isinstance(results, list)
     if isinstance(results[0], list):
         pass
@@ -194,7 +227,7 @@ def main():
         dataset,
         results,
         score_thr=score_thr,
-        nms_iou_thr=0.6,
+        nms_iou_thr=nms_iou_thr,
         tp_iou_thr=tp_iou_thr,
         area_size=area_size)
     np.set_printoptions(precision=4, suppress=True)
@@ -229,7 +262,7 @@ def main():
         map(lambda x: x[0] / (x[1] + exp),
             zip(list(DIS_confusion_matrix[:, 1]), tp)))
 
-    header2 = ['class', 'point_result_normal', 'line_result_normal']
+    header2 = ['class', 'point_result', 'line_result']
     table_data2 = [header2]
     for i in range(len(dataset_name)):
         row_data2 = [
@@ -238,7 +271,6 @@ def main():
         table_data2.append(row_data2)
     table2 = AsciiTable(table_data2)
     print_log('\n' + table2.table)
-
 
 
 if __name__ == '__main__':

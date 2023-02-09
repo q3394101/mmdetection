@@ -45,6 +45,7 @@ from .yolo_head import YOLOV3Head
 from .yolof_head import YOLOFHead
 from .yolox_head import YOLOXHead
 from .yolox_head_datang import YOLOXHead_DT
+from .yolox_tood_head import YOLOXTOODHead
 
 __all__ = [
     'AnchorFreeHead', 'AnchorHead', 'GuidedAnchorHead', 'FeatureAdaption',
@@ -59,5 +60,5 @@ __all__ = [
     'DecoupledSOLOHead', 'CenterNetHead', 'YOLOXHead',
     'DecoupledSOLOLightHead', 'LADHead', 'TOODHead', 'MaskFormerHead',
     'Mask2FormerHead', 'SOLOV2Head', 'DDODHead', 'AscendAnchorHead', 'YOLOXHead_DT'
-    'AscendRetinaHead', 'AscendSSDHead'
+    'AscendRetinaHead', 'AscendSSDHead', 'YOLOXTOODHead'
 ]

@@ -104,14 +104,14 @@ train_pipeline = [
     ##############
     dict(type='YOLOXHSVRandomAug'),
     dict(type='RandomFlip', flip_ratio=0.5),
-    # dict(type='Resize', img_scale=img_scale, keep_ratio=True),
+    dict(type='Resize', img_scale=img_scale, keep_ratio=True),
     dict(type='Normalize', **img_norm_cfg),
-    # dict(
-    #     type='Pad',
-    #     pad_to_square=True,
-    #     # If the image is three-channel, the pad value needs
-    #     # to be set separately for each channel.
-    #     pad_val=dict(img=(114.0, 114.0, 114.0))),
+    dict(
+        type='Pad',
+        pad_to_square=True,
+        # If the image is three-channel, the pad value needs
+        # to be set separately for each channel.
+        pad_val=dict(img=(114.0, 114.0, 114.0))),
     dict(type='FilterAnnotations', min_gt_bbox_wh=(5, 5),
          keep_empty=False),  # v1.1-1  v1.1-2
     dict(type='DefaultFormatBundle'),
@@ -155,10 +155,10 @@ test_pipeline = [
             # dict(type='Resize', keep_ratio=True),
             dict(type='RandomFlip'),
             dict(type='Normalize', **img_norm_cfg),
-            # dict(
-            #     type='Pad',
-            #     pad_to_square=True,
-            #     pad_val=dict(img=(114.0, 114.0, 114.0))),
+            dict(
+                type='Pad',
+                pad_to_square=True,
+                pad_val=dict(img=(114.0, 114.0, 114.0))),
             dict(type='DefaultFormatBundle'),
             dict(type='Collect', keys=['img'])
         ])
@@ -240,12 +240,12 @@ custom_hooks = [
         resume_from=resume_from,
         momentum=0.0001,
         priority=49),
-    dict(
-        type="SimOTAVisualizeHook",
-    ),
-    dict(
-        type='BaseShowDataPipline',
-    )
+    # dict(
+    #     type="SimOTAVisualizeHook",
+    # ),
+    # dict(
+    #     type='BaseShowDataPipline',
+    # )
 ]
 checkpoint_config = dict(interval=interval)
 evaluation = dict(

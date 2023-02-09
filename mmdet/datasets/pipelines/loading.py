@@ -234,14 +234,14 @@ class LoadAnnotations:
         poly2mask=True,
         denorm_bbox=False,
         with_occ=False,  # v1.1-1 # v1.1-6
-        with_direct=False,
+        with_truncate=False,
         file_client_args=dict(backend='disk')):  # noqa E125
         self.with_bbox = with_bbox
         self.with_label = with_label
         self.with_mask = with_mask
         self.with_seg = with_seg
         self.with_occ = with_occ # v1.1-6
-        self.with_direct = with_direct
+        self.with_truncate = with_truncate
         self.poly2mask = poly2mask
         self.denorm_bbox = denorm_bbox
         self.file_client_args = file_client_args.copy()
@@ -257,7 +257,7 @@ class LoadAnnotations:
         """
         ann_info = results['ann_info']
         results['gt_occs'] = ann_info['occ'].copy()
-        results['gt_direct'] = ann_info['direct'].copy()
+        results['gt_truncate'] = ann_info['truncate'].copy()
         return results
 
     def _load_bboxes(self, results):
@@ -418,7 +418,7 @@ class LoadAnnotations:
             results = self._load_semantic_seg(results)
         if self.with_occ: # v1.1-6
             results = self._load_occlusion(results)
-        if self.with_direct:  # v1.1-6
+        if self.with_truncate:  # v1.1-6
             results = self._load_occlusion(results)
         return results
 
@@ -427,7 +427,7 @@ class LoadAnnotations:
         repr_str += f'(with_bbox={self.with_bbox}, '
         repr_str += f'with_label={self.with_label}, '
         repr_str += f'with_occ={self.with_occ}, ' # v1.1-6
-        repr_str += f'with_direct={self.with_direct}, '  # v1.1-6
+        repr_str += f'with_truncate={self.with_truncate}, '  # v1.1-6
         repr_str += f'with_mask={self.with_mask}, '
         repr_str += f'with_seg={self.with_seg}, '
         repr_str += f'poly2mask={self.poly2mask}, '

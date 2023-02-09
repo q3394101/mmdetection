@@ -21,7 +21,7 @@ from mmdet.utils import (collect_env, get_device, get_root_logger,
                          replace_cfg_vals, setup_multi_processes,
                          update_data_root)
 
-config = '/home/chenzhen/dt_code/mmdetection/configs/datang_detection/yolox_s_temp.py'  # noqa E501
+config = '/home/chenzhen/code/detection/mmdetection/configs/datang_detection/yolox_s_temp.py'  # noqa E501
 
 
 def parse_args():

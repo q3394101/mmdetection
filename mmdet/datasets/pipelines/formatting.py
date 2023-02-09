@@ -240,7 +240,7 @@ class DefaultFormatBundle:
                 img = to_tensor(img).permute(2, 0, 1).contiguous()
             results['img'] = DC(
                 img, padding_value=self.pad_val['img'], stack=True)
-        for key in ['proposals', 'gt_bboxes', 'gt_bboxes_ignore', 'gt_labels', 'gt_occs', 'gt_direct']:
+        for key in ['proposals', 'gt_bboxes', 'gt_bboxes_ignore', 'gt_labels', 'gt_occs', 'gt_direct', 'gt_truncate']:
             if key not in results:
                 continue
             results[key] = DC(to_tensor(results[key]))
