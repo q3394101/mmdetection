@@ -466,7 +466,6 @@ class YOLOXHead(BaseDenseHead, BBoxTestMixin):
             offset_priors, decoded_bboxes, gt_bboxes, gt_labels)
 
         sampling_result = self.sampler.sample(assign_result, priors, gt_bboxes)
-
         pos_inds = sampling_result.pos_inds
         num_pos_per_img = pos_inds.size(0)
 

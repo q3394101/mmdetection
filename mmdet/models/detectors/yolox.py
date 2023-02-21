@@ -147,17 +147,3 @@ class YOLOX(SingleStageDetector):
 
         input_size = (tensor[0].item(), tensor[1].item())
         return input_size
-
-    # def extract_feat(self, img):
-    #     """Directly extract features from the backbone+neck."""
-    #     x = self.backbone(img)
-    #     # 可视化resnet产生的特征
-    #     from tools.feature_visualization import draw_feature_map
-    #     draw_feature_map(x)
-    #     if self.with_neck:
-    #         x = self.neck(x)
-    #         # 可视化FPN产生的特征
-    #         from tools.feature_visualization import draw_feature_map
-    #         draw_feature_map(x)
-    #
-    #     return x
