@@ -15,6 +15,7 @@ from mmdet.registry import TRANSFORMS
 from mmdet.structures.bbox import get_box_type
 from mmdet.structures.bbox.box_type import autocast_box_type
 from mmdet.structures.mask import BitmapMasks, PolygonMasks
+import mmengine.fileio as fileio
 
 
 @TRANSFORMS.register_module()
