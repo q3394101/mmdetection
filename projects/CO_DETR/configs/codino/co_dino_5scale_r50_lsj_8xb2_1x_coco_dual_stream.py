@@ -357,14 +357,15 @@ train_dataloader = dict(
 # follow ViTDet
 test_pipeline = [
     dict(type='LoadImageFromFile'),
+    dict(type='LoadImageFromFile2'),
     dict(type='LoadAnnotations', with_bbox=True, with_mask=False),
 
     dict(type='Branch',
          transforms=[
              dict(type='Resize', scale=image_size, keep_ratio=True),
+             dict(type='Pad', size=image_size, pad_val=dict(img=(114, 114, 114))),
          ]),
     
-    dict(type='Pad', size=image_size, pad_val=dict(img=(114, 114, 114))),
     dict(
         type='DoublePackDetInputs',
         meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',
