@@ -132,6 +132,7 @@ class DoubleInputDetDataPreprocessor(ImgDataPreprocessor):
         data = self.cast_data(data)  # type: ignore
         _batch_inputs = data['inputs']
         _batch_inputs2 = data['inputs2']
+        
         # Process data with `pseudo_collate`.
         if is_seq_of(_batch_inputs, torch.Tensor):
             batch_inputs = []
@@ -218,7 +219,7 @@ class DoubleInputDetDataPreprocessor(ImgDataPreprocessor):
                 w / self.pad_size_divisor) * self.pad_size_divisor
             pad_h = target_h - h
             pad_w = target_w - w
-            batch_inputs = F.pad(_batch_inputs2, (0, pad_w, 0, pad_h),
+            batch_inputs2 = F.pad(_batch_inputs2, (0, pad_w, 0, pad_h),
                                  'constant', self.pad_value)
             
         else:
@@ -273,7 +274,7 @@ class DoubleInputDetDataPreprocessor(ImgDataPreprocessor):
                 inputs, data_samples = batch_aug(inputs, data_samples)
                 inputs2, data_samples = batch_aug(inputs2, data_samples)
 
-        return {'inputs': inputs, 'inputs2': inputs, 'data_samples': data_samples}
+        return {'inputs': inputs, 'inputs2': inputs2, 'data_samples': data_samples}
 
     def _get_pad_shape(self, data: dict) -> List[tuple]:
         """Get the pad_shape of each image based on data and

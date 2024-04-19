@@ -2,6 +2,7 @@ import copy
 from turtle import forward
 from typing import Any, Mapping, Tuple, Union
 
+import cv2
 from mmengine.optim import OptimWrapper
 import torch
 import torch.nn as nn
@@ -154,6 +155,7 @@ class CoDETR_Dual(BaseDetector):
                 - If ``mode="predict"``, return a list of :obj:`DetDataSample`.
                 - If ``mode="loss"``, return a dict of tensor.
             """
+            
             if mode == 'loss':
                 return self.loss(inputs, inputs2, data_samples)
             elif mode == 'predict':
@@ -211,8 +213,8 @@ class CoDETR_Dual(BaseDetector):
         z = [i + j for i, j in zip(x, y)]
         
         if self.with_neck:
-            x = self.neck(z)
-        return x
+            z = self.neck(z)
+        return z
 
     def _forward(self,
                  batch_inputs: Tensor,
@@ -225,6 +227,7 @@ class CoDETR_Dual(BaseDetector):
 
     def loss(self, batch_inputs: Tensor, batch_inputs2: Tensor,
              batch_data_samples: SampleList) -> Union[dict, list]:
+        
         batch_input_shape = batch_data_samples[0].batch_input_shape
         if self.use_lsj:
             for data_samples in batch_data_samples:

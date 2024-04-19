@@ -375,7 +375,7 @@ test_pipeline = [
     
     dict(
         type='DoublePackDetInputs',
-        meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',
+        meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape', 'img_path2', 'ori_shape2', 'img_shape2',
                    'scale_factor'))
 ]
 

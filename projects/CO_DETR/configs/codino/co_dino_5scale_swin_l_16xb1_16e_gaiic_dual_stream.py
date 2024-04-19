@@ -60,9 +60,43 @@ model = dict(
         convert_weights=True,
         init_cfg=dict(type='Pretrained', checkpoint=pretrained)),
     neck=dict(in_channels=[192, 384, 768, 1536]),
+
     query_head=dict(
-        dn_cfg=dict(box_noise_scale=0.4, group_cfg=dict(num_dn_queries=500)),
-        transformer=dict(encoder=dict(with_cp=6))))
+        dn_cfg=dict(box_noise_scale=0.4, group_cfg=dict(num_dn_queries=500)), 
+        num_classes=num_classes,
+        transformer=dict(encoder=dict(with_cp=6))),
+    
+    roi_head=[
+        dict(
+            type='CoStandardRoIHead',
+            bbox_roi_extractor=dict(
+                type='SingleRoIExtractor',
+                roi_layer=dict(
+                    type='RoIAlign', output_size=7, sampling_ratio=0),
+                out_channels=256,
+                featmap_strides=[4, 8, 16, 32, 64],
+                finest_scale=56),
+            bbox_head=dict(
+                type='Shared2FCBBoxHead',
+                in_channels=256,
+                fc_out_channels=1024,
+                roi_feat_size=7,
+                num_classes=num_classes,
+                bbox_coder=dict(
+                    type='DeltaXYWHBBoxCoder',
+                    target_means=[0., 0., 0., 0.],
+                    target_stds=[0.1, 0.1, 0.2, 0.2]),
+                reg_class_agnostic=False,
+                reg_decoded_bbox=True,
+                ))
+    ],
+    bbox_head=[
+        dict(
+            num_classes=num_classes,
+        ),
+    ],
+    
+    )
 
 train_pipeline = [
     dict(type='LoadImageFromFile'),
@@ -120,7 +154,7 @@ test_pipeline = [
     
     dict(
         type='DoublePackDetInputs',
-        meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',
+        meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape', 'img_path2', 'ori_shape2', 'img_shape2',
                    'scale_factor'))
 ]
 

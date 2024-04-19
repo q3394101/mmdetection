@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Optional, Sequence
 
+import cv2
 import numpy as np
 from mmcv.transforms import to_tensor
 from mmcv.transforms.base import BaseTransform
@@ -91,6 +92,10 @@ class DoublePackDetInputs(BaseTransform):
             else:
                 img2 = to_tensor(img2).permute(2, 0, 1).contiguous()
 
+            # print(img.shape, img2.shape)
+            # cv2.imwrite("debug1.jpg", img.permute((1,2,0)).cpu().numpy())
+            # cv2.imwrite("debug2.jpg", img2.permute((1,2,0)).cpu().numpy())
+            # raise RuntimeError()
             packed_results['inputs'], packed_results['inputs2'] = img, img2
 
         if 'gt_ignore_flags' in results:
