@@ -301,6 +301,8 @@ load_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='LoadImageFromFile2'),
     dict(type='LoadAnnotations', with_bbox=True, with_mask=False),
+    dict(type='FilterAnnotations', min_gt_bbox_wh=(1e-2, 1e-2)),
+
     dict(type='TransformBroadcaster',
         mapping={'img': ['img', 'img2']},
         auto_remap=True,
@@ -317,10 +319,15 @@ load_pipeline = [
                     crop_size=image_size,
                     recompute_bbox=True,
                     allow_negative_crop=True),
-                dict(type='FilterAnnotations', min_gt_bbox_wh=(1e-2, 1e-2)),
                 dict(type='RandomFlip', prob=0.5),
-        ]),
-    dict(type='Pad', size=image_size, pad_val=dict(img=(114, 114, 114))),
+        ]
+    ),
+    dict(type='Branch',
+         transforms=[
+                 dict(type='Pad', size=image_size, pad_val=dict(img=(114, 114, 114))),
+        ]
+    ),
+    
 ]
 
 train_pipeline = load_pipeline + [
@@ -374,6 +381,7 @@ test_pipeline = [
 
 
 val_evaluator = dict(
+    type='CocoMetric',
     metric='bbox',
     ann_file=data_root + 'val.json')
 

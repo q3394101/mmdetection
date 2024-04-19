@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# export CUDA_VISIBLE_DEVICES="2,3,4,5,6,7"
+export CUDA_VISIBLE_DEVICES="3,4,5,6"
 # export CUDA_LAUNCH_BLOCKING=1
 CONFIG=$1
 GPUS=$2

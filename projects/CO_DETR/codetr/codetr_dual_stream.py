@@ -347,7 +347,7 @@ class CoDETR_Dual(BaseDetector):
                 input_img_h, input_img_w = img_metas['batch_input_shape']
                 img_metas['img_shape'] = [input_img_h, input_img_w]
 
-        img_feats = self.extract_feat(batch_inputs)
+        img_feats = self.extract_feat(batch_inputs, batch_inputs2)
         if self.with_bbox and self.eval_module == 'one-stage':
             results_list = self.predict_bbox_head(
                 img_feats, batch_data_samples, rescale=rescale)
