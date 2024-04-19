@@ -67,7 +67,7 @@ class DoublePackDetInputs(BaseTransform):
         packed_results = dict()
         if 'img' in results and 'img2' in results:
             img = results['img']
-            img2 = results['img']
+            img2 = results['img2']
             if len(img.shape) < 3:
                 img = np.expand_dims(img, -1)
             if len(img2.shape) < 3:
