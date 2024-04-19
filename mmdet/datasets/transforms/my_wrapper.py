@@ -2,6 +2,7 @@
 import copy
 from typing import Callable, Dict, List, Optional, Union
 
+import cv2
 import numpy as np
 from mmcv.transforms import BaseTransform, Compose
 from mmcv.transforms.utils import cache_random_params, cache_randomness
@@ -194,11 +195,12 @@ class Branch(BaseTransform):
         Returns:
             list[dict]: A list of input data.
         """
+        
         cp_data = copy.deepcopy(data)
         cp_data['img'] = cp_data['img2']
-        cp_data['img_shape2'] = cp_data['img_shape2']
-        cp_data['img_path2'] = cp_data['img_path2']
-        cp_data['ori_shape2'] = cp_data['ori_shape2']
+        cp_data['img_shape'] = cp_data['img_shape2']
+        cp_data['img_path'] = cp_data['img_path2']
+        cp_data['ori_shape'] = cp_data['ori_shape2']
         scatters = [data, cp_data]
         return scatters
 
@@ -233,4 +235,5 @@ class Branch(BaseTransform):
         outputs['img_path2'] = output_scatters[1]['img_path']
         outputs['img_shape2'] = output_scatters[1]['img_shape']
         outputs['ori_shape2'] = output_scatters[1]['ori_shape']
+
         return outputs

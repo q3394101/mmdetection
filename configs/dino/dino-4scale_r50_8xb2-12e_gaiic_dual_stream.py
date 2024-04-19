@@ -151,7 +151,7 @@ train_pipeline = [
     dict(type='TransformBroadcaster',
         mapping={'img': ['img', 'img2']},
         auto_remap=True,
-        # share_random_param=True,
+        share_random_params=True,
         transforms=[
             dict(type='RandomFlip', prob=0.5),
             dict(
