@@ -1,7 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from copy import deepcopy
-from typing import Dict, Optional, Tuple
+from turtle import forward
+from typing import Dict, List, Optional, Tuple, Union
 
+from mmdet.structures.det_data_sample import SampleList
 import torch
 from torch import Tensor, nn
 from torch.nn.init import normal_
@@ -86,6 +88,145 @@ class DINO_Dual(DeformableDETR):
         nn.init.xavier_uniform_(self.query_embedding.weight)
         normal_(self.level_embed)
 
+
+    def extract_feat(self, batch_inputs: Tensor, batch_inputs2: Tensor) -> Tuple[Tensor]:
+        """Extract features.
+
+        Args:
+            batch_inputs (Tensor): Image tensor, has shape (bs, dim, H, W).
+
+        Returns:
+            tuple[Tensor]: Tuple of feature maps from neck. Each feature map
+            has shape (bs, dim, H, W).
+        """
+        x = self.backbone1(batch_inputs)
+        y = self.backbone2(batch_inputs2)
+        z = [i + j for i, j in zip(x, y)]
+        if self.with_neck:
+            z = self.neck(z)
+        return z
+
+    def forward(self,
+                inputs: torch.Tensor,
+                inputs2: torch.Tensor,
+                data_samples: OptSampleList = None,
+                mode: str = 'tensor'):
+        """The unified entry for a forward process in both training and test.
+
+        The method should accept three modes: "tensor", "predict" and "loss":
+
+        - "tensor": Forward the whole network and return tensor or tuple of
+        tensor without any post-processing, same as a common nn.Module.
+        - "predict": Forward and return the predictions, which are fully
+        processed to a list of :obj:`DetDataSample`.
+        - "loss": Forward and return a dict of losses according to the given
+        inputs and data samples.
+
+        Note that this method doesn't handle either back propagation or
+        parameter update, which are supposed to be done in :meth:`train_step`.
+
+        Args:
+            inputs (torch.Tensor): The input tensor with shape
+                (N, C, ...) in general.
+            data_samples (list[:obj:`DetDataSample`], optional): A batch of
+                data samples that contain annotations and predictions.
+                Defaults to None.
+            mode (str): Return what kind of value. Defaults to 'tensor'.
+
+        Returns:
+            The return type depends on ``mode``.
+
+            - If ``mode="tensor"``, return a tensor or a tuple of tensor.
+            - If ``mode="predict"``, return a list of :obj:`DetDataSample`.
+            - If ``mode="loss"``, return a dict of tensor.
+        """
+        if mode == 'loss':
+            return self.loss(inputs, inputs2, data_samples)
+        elif mode == 'predict':
+            return self.predict(inputs, inputs2, data_samples)
+        elif mode == 'tensor':
+            return self._forward(inputs, inputs2, data_samples)
+        else:
+            raise RuntimeError(f'Invalid mode "{mode}". '
+                               'Only supports loss, predict and tensor mode')
+
+    def loss(self, batch_inputs: Tensor, batch_inputs2: Tensor,
+             batch_data_samples: SampleList) -> Union[dict, list]:
+
+        img_feats = self.extract_feat(batch_inputs, batch_inputs2)
+        head_inputs_dict = self.forward_transformer(img_feats,
+                                                    batch_data_samples)
+        losses = self.bbox_head.loss(
+            **head_inputs_dict, batch_data_samples=batch_data_samples)
+
+        return losses
+
+
+    def predict(self,
+                batch_inputs: Tensor,
+                batch_inputs2: Tensor,
+                batch_data_samples: SampleList,
+                rescale: bool = True) -> SampleList:
+        """Predict results from a batch of inputs and data samples with post-
+        processing.
+
+        Args:
+            batch_inputs (Tensor): Inputs, has shape (bs, dim, H, W).
+            batch_data_samples (List[:obj:`DetDataSample`]): The batch
+                data samples. It usually includes information such
+                as `gt_instance` or `gt_panoptic_seg` or `gt_sem_seg`.
+            rescale (bool): Whether to rescale the results.
+                Defaults to True.
+
+        Returns:
+            list[:obj:`DetDataSample`]: Detection results of the input images.
+            Each DetDataSample usually contain 'pred_instances'. And the
+            `pred_instances` usually contains following keys.
+
+            - scores (Tensor): Classification scores, has a shape
+              (num_instance, )
+            - labels (Tensor): Labels of bboxes, has a shape
+              (num_instances, ).
+            - bboxes (Tensor): Has a shape (num_instances, 4),
+              the last dimension 4 arrange as (x1, y1, x2, y2).
+        """
+        img_feats = self.extract_feat(batch_inputs, batch_inputs2)
+        head_inputs_dict = self.forward_transformer(img_feats,
+                                                    batch_data_samples)
+        results_list = self.bbox_head.predict(
+            **head_inputs_dict,
+            rescale=rescale,
+            batch_data_samples=batch_data_samples)
+        batch_data_samples = self.add_pred_to_datasample(
+            batch_data_samples, results_list)
+        return batch_data_samples
+
+
+    def _forward(
+            self,
+            batch_inputs: Tensor,
+            batch_inputs2: Tensor,
+            batch_data_samples: OptSampleList = None) -> Tuple[List[Tensor]]:
+        """Network forward process. Usually includes backbone, neck and head
+        forward without any post-processing.
+
+         Args:
+            batch_inputs (Tensor): Inputs, has shape (bs, dim, H, W).
+            batch_data_samples (List[:obj:`DetDataSample`], optional): The
+                batch data samples. It usually includes information such
+                as `gt_instance` or `gt_panoptic_seg` or `gt_sem_seg`.
+                Defaults to None.
+
+        Returns:
+            tuple[Tensor]: A tuple of features from ``bbox_head`` forward.
+        """
+        img_feats = self.extract_feat(batch_inputs, batch_inputs2)
+        head_inputs_dict = self.forward_transformer(img_feats,
+                                                    batch_data_samples)
+        results = self.bbox_head.forward(**head_inputs_dict)
+        return results
+
+
     def forward_transformer(
         self,
         img_feats: Tuple[Tensor],
@@ -128,6 +269,7 @@ class DINO_Dual(DeformableDETR):
         decoder_outputs_dict = self.forward_decoder(**decoder_inputs_dict)
         head_inputs_dict.update(decoder_outputs_dict)
         return head_inputs_dict
+
 
     def pre_decoder(
         self,

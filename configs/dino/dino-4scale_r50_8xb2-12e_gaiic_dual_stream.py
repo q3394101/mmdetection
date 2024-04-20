@@ -4,11 +4,12 @@ _base_ = [
 
 
 custom_imports = dict(imports=[
-                               'mmdet.datasets.transforms.my_loading',
-                               'mmdet.datasets.transforms.my_wrapper',
-                               'mmdet.datasets.transforms.my_formatting',
-                               'mmdet.models.data_preprocessors.my_data_preprocessor',
-                               'mmdet.datasets.my_coco',
+                                'mmdet.models.detectors.dino_dual_stream'
+                                'mmdet.datasets.transforms.my_loading',
+                                'mmdet.datasets.transforms.my_wrapper',
+                                'mmdet.datasets.transforms.my_formatting',
+                                'mmdet.models.data_preprocessors.my_data_preprocessor',
+                                'mmdet.datasets.my_coco',
                                ], allow_failed_imports=False)
 
 dataset_type = 'DualStreamCocoDataset'
@@ -17,7 +18,7 @@ backend_args = None
 num_classes = 5
 
 model = dict(
-    type='DINO',
+    type='DINO_Dual',
     num_queries=900,  # num_matching_queries
     with_box_refine=True,
     as_two_stage=True,
@@ -104,16 +105,17 @@ model = dict(
 test_pipeline = [
     dict(type='LoadImageFromFile', backend_args=backend_args),
     dict(type='LoadImageFromFile2', backend_args=backend_args),
+    # If you don't have a gt annotation, delete the pipeline
+    dict(type='LoadAnnotations', with_bbox=True),
     dict(type='Branch',
          transforms=[
             dict(type='Resize', scale=(1333, 800), keep_ratio=True),
          ]
     ),
-    # If you don't have a gt annotation, delete the pipeline
-    dict(type='LoadAnnotations', with_bbox=True),
+
     dict(
         type='DoublePackDetInputs',
-        meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',
+        meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape', 'img_path2', 'ori_shape2', 'img_shape2',
                    'scale_factor'))
 ]
 
@@ -131,6 +133,7 @@ val_dataloader = dict(
         test_mode=True,
         pipeline=test_pipeline,
         backend_args=backend_args))
+
 test_dataloader = val_dataloader
 
 val_evaluator = dict(
@@ -139,6 +142,7 @@ val_evaluator = dict(
     metric='bbox',
     format_only=False,
     backend_args=backend_args)
+
 test_evaluator = val_evaluator
 
 
@@ -148,43 +152,30 @@ train_pipeline = [
     dict(type='LoadImageFromFile', backend_args={{_base_.backend_args}}),
     dict(type='LoadImageFromFile2', backend_args={{_base_.backend_args}}),
     dict(type='LoadAnnotations', with_bbox=False),
-    dict(type='TransformBroadcaster',
-        mapping={'img': ['img', 'img2']},
-        auto_remap=True,
-        share_random_params=True,
+    dict(type='Image2Broadcaster',
+
         transforms=[
             dict(type='RandomFlip', prob=0.5),
             dict(
-                type='RandomChoice',
-                transforms=[
-                    [
-                        dict(
-                            type='RandomChoiceResize',
-                            scales=[(480, 1333), (512, 1333), (544, 1333), (576, 1333),
-                                    (608, 1333), (640, 1333), (672, 1333), (704, 1333),
-                                    (736, 1333), (768, 1333), (800, 1333)],
-                            keep_ratio=True)
-                    ],
-                    [
-                        dict(
-                            type='RandomChoiceResize',
-                            # The radio of all image in train dataset < 7
-                            # follow the original implement
-                            scales=[(400, 4200), (500, 4200), (600, 4200)],
-                            keep_ratio=True),
-                        dict(
-                            type='RandomCrop',
-                            crop_type='absolute_range',
-                            crop_size=(384, 600),
-                            allow_negative_crop=True),
-                        dict(
-                            type='RandomChoiceResize',
-                            scales=[(480, 1333), (512, 1333), (544, 1333), (576, 1333),
-                                    (608, 1333), (640, 1333), (672, 1333), (704, 1333),
-                                    (736, 1333), (768, 1333), (800, 1333)],
-                            keep_ratio=True)
-                    ]
-                ])]
+                type='RandomChoiceResize',
+                # The radio of all image in train dataset < 7
+                # follow the original implement
+                scales=[(400, 4200), (500, 4200), (600, 4200)],
+                keep_ratio=True),
+            dict(
+                type='RandomCrop',
+                crop_type='absolute_range',
+                crop_size=(384, 600),
+                recompute_bbox=True,
+                allow_negative_crop=True),
+            dict(
+                type='RandomChoiceResize',
+                scales=[(480, 1333), (512, 1333), (544, 1333), (576, 1333),
+                        (608, 1333), (640, 1333), (672, 1333), (704, 1333),
+                        (736, 1333), (768, 1333), (800, 1333)],
+                keep_ratio=True)
+        ]
+                
     ),
     dict(type='DoublePackDetInputs')
 ]
@@ -213,7 +204,7 @@ optim_wrapper = dict(
         lr=0.0001,  # 0.0002 for DeformDETR
         weight_decay=0.0001),
     clip_grad=dict(max_norm=0.1, norm_type=2),
-    paramwise_cfg=dict(custom_keys={'backbone': dict(lr_mult=0.1)})
+    paramwise_cfg=dict(custom_keys={'backbone1': dict(lr_mult=0.1), 'backbone2': dict(lr_mult=0.1)})
 )  # custom_keys contains sampling_offsets and reference_points in DeformDETR  # noqa
 
 # learning policy
