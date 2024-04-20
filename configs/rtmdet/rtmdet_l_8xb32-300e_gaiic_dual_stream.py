@@ -89,7 +89,7 @@ train_pipeline = [
     dict(type='LoadImageFromFile2'),
     dict(type='LoadAnnotations'),
     
-    # dict(type='CachedMosaic2Images', img_scale=(640, 640), pad_val=114.0),
+    dict(type='CachedMosaic2Images', img_scale=(640, 640), pad_val=114.0),
 
     dict(
         type='Image2Broadcaster',
@@ -98,7 +98,7 @@ train_pipeline = [
             dict(
                 type='RandomResize',
                 scale=(1280, 1280),
-                ratio_range=(0.5, 2),
+                ratio_range=(0.8, 1.3),
                 keep_ratio=True),
             dict(type='RandomCrop', crop_size=(640, 640), recompute_bbox=True,
                  crop_type='absolute',
@@ -271,4 +271,4 @@ custom_hooks = [
 ]
 
 visualization = _base_.default_hooks.visualization
-visualization.update(dict(draw=debug_flag, show=debug_flag))
+visualization.update(dict(draw=True, show=debug_flag))

@@ -156,6 +156,14 @@ class CoDETR_Dual(BaseDetector):
                 - If ``mode="loss"``, return a dict of tensor.
             """
             
+            # from mmdet.visualization.local_visualizer import DetLocalVisualizer
+            # dv = DetLocalVisualizer()
+            # image = inputs2.permute(0, 2,3,1)[0].cpu().numpy()[:,:,::-1] * 255
+            # image2 = inputs.permute(0, 2,3,1)[0].cpu().numpy()[:,:,::-1] * 255
+            # dv.add_datasample('image', image, data_samples[0], draw_gt=True, show=True)
+            # dv.add_datasample('image2', image2, data_samples[0], draw_gt=True, show=True)
+            
+            
             if mode == 'loss':
                 return self.loss(inputs, inputs2, data_samples)
             elif mode == 'predict':
