@@ -303,10 +303,7 @@ load_pipeline = [
     dict(type='LoadAnnotations', with_bbox=True, with_mask=False),
     dict(type='FilterAnnotations', min_gt_bbox_wh=(1e-2, 1e-2)),
 
-    dict(type='TransformBroadcaster',
-        mapping={'img': ['img', 'img2']},
-        auto_remap=True,
-        share_random_params=True,
+    dict(type='Image2Broadcaster',
         transforms=[
                 dict(
                     type='RandomResize',
@@ -404,7 +401,7 @@ optim_wrapper = dict(
     type='OptimWrapper',
     optimizer=dict(type='AdamW', lr=2e-4, weight_decay=0.0001),
     clip_grad=dict(max_norm=0.1, norm_type=2),
-    paramwise_cfg=dict(custom_keys={'backbone': dict(lr_mult=0.1)}))
+    paramwise_cfg=dict(custom_keys={'backbone1': dict(lr_mult=0.1), 'backbone2': dict(lr_mult=0.1)}))
 
 
 max_epochs = 12
@@ -431,4 +428,4 @@ log_processor = dict(by_epoch=True)
 # NOTE: `auto_scale_lr` is for automatically scaling LR,
 # USER SHOULD NOT CHANGE ITS VALUES.
 # base_batch_size = (8 GPUs) x (2 samples per GPU)
-auto_scale_lr = dict(base_batch_size=16)
+auto_scale_lr = dict(base_batch_size=8)

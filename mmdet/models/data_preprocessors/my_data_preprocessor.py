@@ -271,9 +271,9 @@ class DoubleInputDetDataPreprocessor(ImgDataPreprocessor):
         if training and self.batch_augments is not None:
             # raise RuntimeError("Batch augments disabled for double input preprocess.")
             for batch_aug in self.batch_augments:
+                inputs2, _ = batch_aug(inputs2, data_samples)
                 inputs, data_samples = batch_aug(inputs, data_samples)
-                inputs2, data_samples = batch_aug(inputs2, data_samples)
-
+                
         return {'inputs': inputs, 'inputs2': inputs2, 'data_samples': data_samples}
 
     def _get_pad_shape(self, data: dict) -> List[tuple]:

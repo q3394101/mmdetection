@@ -2950,7 +2950,8 @@ class YOLOXHSVRandomAug(BaseTransform):
         img_hsv[..., 0] = (img_hsv[..., 0] + hsv_gains[0]) % 180
         img_hsv[..., 1] = np.clip(img_hsv[..., 1] + hsv_gains[1], 0, 255)
         img_hsv[..., 2] = np.clip(img_hsv[..., 2] + hsv_gains[2], 0, 255)
-        cv2.cvtColor(img_hsv.astype(img.dtype), cv2.COLOR_HSV2BGR, dst=img)
+
+        img = cv2.cvtColor(img_hsv.astype(img.dtype), cv2.COLOR_HSV2BGR)
 
         results['img'] = img
         return results
