@@ -16,7 +16,7 @@ custom_imports = dict(imports=[
                                'mmdet.datasets.transforms.my_transforms'
                                ], allow_failed_imports=False)
 
-# load_from = 'https://download.openmmlab.com/mmdetection/v3.0/rtmdet/rtmdet_l_8xb32-300e_coco/rtmdet_l_8xb32-300e_coco_20220719_112030-5a0be7c4.pth'
+load_from = 'https://download.openmmlab.com/mmdetection/v3.0/rtmdet/rtmdet_l_8xb32-300e_coco/rtmdet_l_8xb32-300e_coco_20220719_112030-5a0be7c4.pth'
 debug_flag = False
 
 dataset_type = 'DualStreamCocoDataset'
@@ -207,7 +207,7 @@ test_dataloader = val_dataloader
 max_epochs = 300
 stage2_num_epochs = 20
 base_lr = 0.004
-interval = 1 if debug_flag else 10
+interval = 1 if debug_flag else 1
 
 train_cfg = dict(
     max_epochs=max_epochs,
