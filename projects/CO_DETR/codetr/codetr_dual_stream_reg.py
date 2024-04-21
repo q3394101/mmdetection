@@ -13,9 +13,12 @@ from mmdet.registry import MODELS
 from mmdet.structures import OptSampleList, SampleList
 from mmdet.utils import InstanceList, OptConfigType, OptMultiConfig
 
+from mmdet.models.layers.registration import SpatialTransformer
+from projects.CO_DETR.codetr.registration_net import Unet
+
 
 @MODELS.register_module()
-class CoDETR_Dual(BaseDetector):
+class CoDETR_Dual_Reg(BaseDetector):
 
     def __init__(
             self,
@@ -36,7 +39,7 @@ class CoDETR_Dual(BaseDetector):
             eval_index=0,
             data_preprocessor: OptConfigType = None,
             init_cfg: OptMultiConfig = None):
-        super(CoDETR_Dual, self).__init__(
+        super(CoDETR_Dual_Reg, self).__init__(
             data_preprocessor=data_preprocessor, init_cfg=init_cfg)
         self.with_pos_coord = with_pos_coord
         self.use_lsj = use_lsj
@@ -98,7 +101,20 @@ class CoDETR_Dual(BaseDetector):
         self.head_idx = head_idx
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
+
+        self.reg_net = Unet(neck['in_channels'][0] * 2)
+        self.spt = SpatialTransformer(size=(1024 // 4, 1024 // 4))
+        # configure unet to flow field layer
+        Conv = getattr(nn, 'Conv%dd' % 2)
+        self.flow = Conv(2, 2, kernel_size=3, padding=1)
+
+        from torch.distributions.normal import Normal
+
+        # init flow layer with small weights and bias
+        self.flow.weight = nn.Parameter(Normal(0, 1e-5).sample(self.flow.weight.shape))
+        self.flow.bias = nn.Parameter(torch.zeros(self.flow.bias.shape))
         
+
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs):
         # Find backbone parameters
         copy_ori = False
@@ -120,8 +136,6 @@ class CoDETR_Dual(BaseDetector):
             strict = False
         return super()._load_from_state_dict(state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs)
 
-
-    
 
     def forward(self,
                     inputs: torch.Tensor,
@@ -164,7 +178,6 @@ class CoDETR_Dual(BaseDetector):
             # image2 = inputs.permute(0, 2,3,1)[0].cpu().numpy()[:,:,::-1] * 255
             # dv.add_datasample('image', image, data_samples[0], draw_gt=True, show=True)
             # dv.add_datasample('image2', image2, data_samples[0], draw_gt=True, show=True)
-            
             
             if mode == 'loss':
                 return self.loss(inputs, inputs2, data_samples)
@@ -215,13 +228,26 @@ class CoDETR_Dual(BaseDetector):
             tuple[Tensor]: Tuple of feature maps from neck. Each feature map
             has shape (bs, dim, H, W).
         """
-                
+
         x = self.backbone1(batch_inputs)
         y = self.backbone2(batch_inputs2)
-        
+
+        x = list(x)
+        ## Align HR Features ##
+        hr1_f = x[0]
+        hr2_f = y[0]
+
+        flow = self.flow(self.reg_net(hr1_f.detach(), hr2_f.detach()))
+        flow = torch.clamp(flow, -32, 32)
+        # print(flow.shape, flow.max(), flow.min())
+        x[0] = self.spt.forward(hr1_f.detach(), flow)
+
         ## Concat ##
         z = [i + j for i, j in zip(x, y)]
         
+        # for i in z:
+        #     print(i.shape)
+
         if self.with_neck:
             z = self.neck(z)
         return z

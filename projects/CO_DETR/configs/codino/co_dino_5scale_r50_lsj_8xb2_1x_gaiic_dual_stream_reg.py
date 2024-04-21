@@ -12,7 +12,8 @@ custom_imports = dict(imports=['projects.CO_DETR.codetr.codetr_dual_stream',
                                'mmdet.datasets.transforms.my_formatting',
                                'mmdet.models.data_preprocessors.my_data_preprocessor',
                                'mmdet.datasets.my_coco',
-                               'projects.CO_DETR.codetr'
+                               'projects.CO_DETR.codetr',
+                               'projects.CO_DETR.codetr.codetr_dual_stream_reg'
                                ], allow_failed_imports=False)
 
 dataset_type = 'DualStreamCocoDataset'
@@ -34,7 +35,7 @@ num_dec_layer = 6
 loss_lambda = 2.0
 
 model = dict(
-    type='CoDETR_Dual',
+    type='CoDETR_Dual_Reg',
     # If using the lsj augmentation,
     # it is recommended to set it to True.
     use_lsj=True,

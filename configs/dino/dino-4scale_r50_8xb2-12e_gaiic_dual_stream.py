@@ -4,7 +4,7 @@ _base_ = [
 
 
 custom_imports = dict(imports=[
-                                'mmdet.models.detectors.dino_dual_stream'
+                                'mmdet.models.detectors.dino_dual_stream',
                                 'mmdet.datasets.transforms.my_loading',
                                 'mmdet.datasets.transforms.my_wrapper',
                                 'mmdet.datasets.transforms.my_formatting',
