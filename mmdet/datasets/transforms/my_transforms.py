@@ -305,17 +305,20 @@ class BndboxShift(BaseTransform):
         filter_thr_px (int): The width and height threshold for filtering.
             The bbox and the rest of the targets below the width and
             height threshold will be filtered. Defaults to 1.
+        unchange_thr_px (int): The width and height threshold for unchanging.
     """
 
     def __init__(self,
                  prob: float = 0.5,
                  max_shift_px: int = 32,
-                 filter_thr_px: int = 1) -> None:
+                 filter_thr_px: int = 1,
+                 unchange_thr_px: int = 32) -> None:
         assert 0 <= prob <= 1
         assert max_shift_px >= 0
         self.prob = prob
         self.max_shift_px = max_shift_px
         self.filter_thr_px = int(filter_thr_px)
+        self.unchange_thr_px = int(unchange_thr_px)
 
     @cache_randomness
     def _random_prob(self) -> float:
@@ -331,41 +334,31 @@ class BndboxShift(BaseTransform):
         Returns:
             dict: Shift results.
         """
-        if self._random_prob() < self.prob:
-            img_shape = results['img'].shape[:2]
+        gt_bboxes = results['gt_bboxes']
+        img_shape = results['img'].shape[:2]
 
-            random_shift_x = random.randint(-self.max_shift_px,
-                                            self.max_shift_px)
-            random_shift_y = random.randint(-self.max_shift_px,
-                                            self.max_shift_px)
+        for i in range(len(gt_bboxes)):
+            gt_bbox = gt_bboxes[i].clone()
 
-            # TODO: support mask and semantic segmentation maps.
-            bboxes = results['gt_bboxes'].clone()
-            bboxes.translate_([random_shift_x, random_shift_y])
+            if (gt_bbox.cxcywh[0, 2:]).min() > self.unchange_thr_px and self._random_prob() < self.prob:
+                random_shift_x = random.randint(-self.max_shift_px,
+                                                self.max_shift_px)
+                random_shift_y = random.randint(-self.max_shift_px,
+                                                self.max_shift_px)
+                gt_bbox.translate_([random_shift_x, random_shift_y])
 
-            # clip border
-            bboxes.clip_(img_shape)
+                # clip border
+                gt_bbox.clip_(img_shape)
 
-            # remove invalid bboxes
-            valid_inds = (bboxes.widths > self.filter_thr_px).numpy() & (
-                bboxes.heights > self.filter_thr_px).numpy()
-            # If the shift does not contain any gt-bbox area, skip this
-            # image.
-            if not valid_inds.any():
-                return results
-            bboxes = bboxes[valid_inds]
-            results['gt_bboxes'] = bboxes
-            results['gt_bboxes_labels'] = results['gt_bboxes_labels'][
-                valid_inds]
-
-            if results.get('gt_ignore_flags', None) is not None:
-                results['gt_ignore_flags'] = \
-                    results['gt_ignore_flags'][valid_inds]
+                if gt_bbox.cxcywh[0, 2:].min() > self.filter_thr_px:
+                    gt_bboxes[i] = gt_bbox
         return results
 
     def __repr__(self):
         repr_str = self.__class__.__name__
         repr_str += f'(prob={self.prob}, '
         repr_str += f'max_shift_px={self.max_shift_px}, '
-        repr_str += f'filter_thr_px={self.filter_thr_px})'
+        repr_str += f'filter_thr_px={self.filter_thr_px}, '
+        repr_str += f'unchange_thr_px={self.unchange_thr_px})'
         return repr_str
+
