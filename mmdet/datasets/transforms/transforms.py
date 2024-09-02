@@ -933,6 +933,10 @@ class RandomCrop(BaseTransform):
                 results['gt_bboxes_labels'] = \
                     results['gt_bboxes_labels'][valid_inds]
 
+            if results.get('gt_bboxes_talls', None) is not None:
+                results['gt_bboxes_talls'] = \
+                    results['gt_bboxes_talls'][valid_inds]
+
             if results.get('gt_masks', None) is not None:
                 results['gt_masks'] = results['gt_masks'][
                     valid_inds.nonzero()[0]].crop(
@@ -3469,6 +3473,7 @@ class CachedMosaic(Mosaic):
         mosaic_bboxes_labels = []
         mosaic_ignore_flags = []
         mosaic_masks = []
+        mosaic_bboxes_talls = []
         with_mask = True if 'gt_masks' in results else False
 
         if len(results['img'].shape) == 3:
@@ -3517,6 +3522,7 @@ class CachedMosaic(Mosaic):
             gt_bboxes_i = results_patch['gt_bboxes']
             gt_bboxes_labels_i = results_patch['gt_bboxes_labels']
             gt_ignore_flags_i = results_patch['gt_ignore_flags']
+            gt_bboxes_talls_i = results_patch['gt_bboxes_talls']
 
             padw = x1_p - x1_c
             padh = y1_p - y1_c
@@ -3525,6 +3531,7 @@ class CachedMosaic(Mosaic):
             mosaic_bboxes.append(gt_bboxes_i)
             mosaic_bboxes_labels.append(gt_bboxes_labels_i)
             mosaic_ignore_flags.append(gt_ignore_flags_i)
+            mosaic_bboxes_talls.append(gt_bboxes_talls_i)
             if with_mask and results_patch.get('gt_masks', None) is not None:
                 gt_masks_i = results_patch['gt_masks']
                 gt_masks_i = gt_masks_i.rescale(float(scale_ratio_i))
@@ -3543,6 +3550,7 @@ class CachedMosaic(Mosaic):
         mosaic_bboxes = mosaic_bboxes[0].cat(mosaic_bboxes, 0)
         mosaic_bboxes_labels = np.concatenate(mosaic_bboxes_labels, 0)
         mosaic_ignore_flags = np.concatenate(mosaic_ignore_flags, 0)
+        mosaic_bboxes_talls = np.concatenate(mosaic_bboxes_talls, 0)
 
         if self.bbox_clip_border:
             mosaic_bboxes.clip_([2 * self.img_scale[1], 2 * self.img_scale[0]])
@@ -3552,12 +3560,14 @@ class CachedMosaic(Mosaic):
         mosaic_bboxes = mosaic_bboxes[inside_inds]
         mosaic_bboxes_labels = mosaic_bboxes_labels[inside_inds]
         mosaic_ignore_flags = mosaic_ignore_flags[inside_inds]
+        mosaic_bboxes_talls = mosaic_bboxes_talls[inside_inds]
 
         results['img'] = mosaic_img
         results['img_shape'] = mosaic_img.shape[:2]
         results['gt_bboxes'] = mosaic_bboxes
         results['gt_bboxes_labels'] = mosaic_bboxes_labels
         results['gt_ignore_flags'] = mosaic_ignore_flags
+        results['gt_bboxes_talls'] = mosaic_bboxes_talls
 
         if with_mask:
             mosaic_masks = mosaic_masks[0].cat(mosaic_masks)
@@ -3814,6 +3824,7 @@ class CachedMixUp(BaseTransform):
 
         retrieve_gt_bboxes_labels = retrieve_results['gt_bboxes_labels']
         retrieve_gt_ignore_flags = retrieve_results['gt_ignore_flags']
+        retrieve_gt_bboxes_talls = retrieve_results['gt_bboxes_talls']
 
         mixup_gt_bboxes = cp_retrieve_gt_bboxes.cat(
             (results['gt_bboxes'], cp_retrieve_gt_bboxes), dim=0)
@@ -3821,6 +3832,8 @@ class CachedMixUp(BaseTransform):
             (results['gt_bboxes_labels'], retrieve_gt_bboxes_labels), axis=0)
         mixup_gt_ignore_flags = np.concatenate(
             (results['gt_ignore_flags'], retrieve_gt_ignore_flags), axis=0)
+        mixup_gt_bboxes_talls = np.concatenate(
+            (results['gt_bboxes_talls'], retrieve_gt_bboxes_talls), axis=0)
         if with_mask:
             mixup_gt_masks = retrieve_gt_masks.cat(
                 [results['gt_masks'], retrieve_gt_masks])
@@ -3830,6 +3843,7 @@ class CachedMixUp(BaseTransform):
         mixup_gt_bboxes = mixup_gt_bboxes[inside_inds]
         mixup_gt_bboxes_labels = mixup_gt_bboxes_labels[inside_inds]
         mixup_gt_ignore_flags = mixup_gt_ignore_flags[inside_inds]
+        mixup_gt_bboxes_talls = mixup_gt_bboxes_talls[inside_inds]
         if with_mask:
             mixup_gt_masks = mixup_gt_masks[inside_inds]
 
@@ -3838,6 +3852,7 @@ class CachedMixUp(BaseTransform):
         results['gt_bboxes'] = mixup_gt_bboxes
         results['gt_bboxes_labels'] = mixup_gt_bboxes_labels
         results['gt_ignore_flags'] = mixup_gt_ignore_flags
+        results['gt_bboxes_talls'] = mixup_gt_bboxes_talls
         if with_mask:
             results['gt_masks'] = mixup_gt_masks
         return results

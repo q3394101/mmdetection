@@ -787,7 +787,8 @@ class FilterAnnotations(BaseTransform):
             if self.keep_empty:
                 return None
 
-        keys = ('gt_bboxes', 'gt_bboxes_labels', 'gt_masks', 'gt_ignore_flags')
+        keys = ('gt_bboxes', 'gt_bboxes_labels', 'gt_bboxes_talls', 'gt_masks',
+                'gt_ignore_flags')
         for key in keys:
             if key in results:
                 results[key] = results[key][keep]
@@ -1072,3 +1073,20 @@ class LoadTrackAnnotations(LoadAnnotations):
         repr_str += f"imdecode_backend='{self.imdecode_backend}', "
         repr_str += f'file_client_args={self.file_client_args})'
         return repr_str
+
+
+@TRANSFORMS.register_module()
+class LoadTallAnnotations(LoadAnnotations):
+
+    def _load_talls(self, results: dict) -> None:
+        gt_bboxes_talls = []
+        for instance in results.get('instances', []):
+            gt_bboxes_talls.append(instance['tall'])
+        # TODO: Inconsistent with mmcv, consider how to deal with it later.
+        results['gt_bboxes_talls'] = np.array(
+            gt_bboxes_talls, dtype=np.float32)
+
+    def transform(self, results: dict) -> dict:
+        super().transform(results)
+        self._load_talls(results)
+        return results
